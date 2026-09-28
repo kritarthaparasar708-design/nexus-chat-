@@ -1,14 +1,40 @@
-# Welcome to your Lovable project
+# Nexus Chat
 
-This project was built with [Lovable](https://lovable.dev).
+A modern AI chat application developed by **KrynPy Studio**.
 
-## Build with Lovable
+Nexus Chat is designed as a clean, fast, and modern AI chat interface with a focus on simplicity, usability, and a smooth user experience.
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+## 🚀 Features
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- Modern AI chat interface
+- Clean and responsive design
+- Fast development with React and TypeScript
+- Markdown support
+- Responsive layout for desktop and mobile
+- Modern UI components
+- Easy local development
+- Production-ready build system
+
+## 🛠️ Built With
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- TanStack
+- Modern UI components
+
+## 💻 Development
+
+### Requirements
+
+- Node.js
+- npm
+
+### Install
+
+```bash
+npm install
 
 ## Development
 

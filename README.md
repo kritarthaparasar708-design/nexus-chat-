@@ -1,55 +1,21 @@
-# Nexus Chat
+# Routes
 
-A modern AI chat application developed by **KrynPy Studio**.
+TanStack Start uses **file-based routing**. Every `.tsx` file in this directory
+defines a route. Do **not** create `src/pages/`, `src/routes/_app/index.tsx`, or
+`app/layout.tsx` — those are Next.js / Remix conventions. The only root layout
+is `src/routes/__root.tsx`.
 
-Nexus Chat is designed as a clean, fast, and modern AI chat interface with a focus on simplicity, usability, and a smooth user experience.
+## Conventions
 
-## 🚀 Features
+| File                     | URL                                                     |
+| ------------------------ | ------------------------------------------------------- |
+| `index.tsx`              | `/`                                                     |
+| `about.tsx`              | `/about`                                                |
+| `users/index.tsx`        | `/users`                                                |
+| `users/$id.tsx`          | `/users/:id` (dynamic — bare `$`, no curly braces)      |
+| `posts/{-$category}.tsx` | `/posts/:category?` (optional segment)                  |
+| `files/$.tsx`            | `/files/*` (splat — read via `_splat` param, never `*`) |
+| `_layout.tsx`            | layout route (renders children via `<Outlet />`)        |
+| `__root.tsx`             | app shell — wraps every page; preserve `<Outlet />`     |
 
-- Modern AI chat interface
-- Clean and responsive design
-- Fast development with React and TypeScript
-- Markdown support
-- Responsive layout for desktop and mobile
-- Modern UI components
-- Easy local development
-- Production-ready build system
-
-## 🛠️ Built With
-
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- TanStack
-- Modern UI components
-
-## 💻 Development
-
-### Requirements
-
-- Node.js
-- npm
-
-### Install
-
-```bash
-npm install
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+`routeTree.gen.ts` is auto-generated. Don't edit it by hand.

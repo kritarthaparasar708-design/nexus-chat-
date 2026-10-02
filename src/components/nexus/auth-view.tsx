@@ -1,19 +1,7 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import {
-  Apple,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Eye,
-  EyeOff,
-  Hexagon,
-  LockKeyhole,
-  Mail,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ArrowLeft, ArrowRight, Hexagon, LoaderCircle, LockKeyhole, Mail, Phone, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BrandMark, Modal } from "./primitives";
+import { BrandMark } from "./primitives";
 import { useNexus } from "./state";
 
 function AuthLayout({
@@ -31,379 +19,279 @@ function AuthLayout({
     <div className="nexus-auth-page">
       <div className="nexus-auth-backdrop" />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Link to="/welcome">
-          <BrandMark />
-        </Link>
-        <Link to={backTo} className="nexus-text-button flex items-center gap-2">
-          <ArrowLeft className="size-3.5" /> Back
-        </Link>
+        <Link to="/welcome"><BrandMark /></Link>
+        <Link to={backTo} className="nexus-text-button flex items-center gap-2"><ArrowLeft className="size-3.5" /> Back</Link>
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center px-5 py-8 sm:px-8">
         <div className="w-full max-w-md">
           <div className="mb-7 text-center">
-            <span className="mx-auto grid size-12 place-items-center rounded-2xl border border-primary/30 bg-primary/12 text-primary shadow-[0_0_32px_-12px_rgba(168,85,247,.9)]">
-              <Hexagon className="size-6 fill-current" />
-            </span>
+            <span className="mx-auto grid size-12 place-items-center rounded-2xl border border-primary/30 bg-primary/12 text-primary shadow-[0_0_32px_-12px_rgba(168,85,247,.9)]"><Hexagon className="size-6 fill-current" /></span>
             <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{subtitle}</p>
           </div>
           <div className="nexus-auth-card">{children}</div>
         </div>
       </main>
-      <footer className="px-5 pb-5 text-center text-[10px] text-muted-foreground">
-        Nexus Chat demo · Local state only · No production authentication connected
-      </footer>
+      <footer className="px-5 pb-5 text-center text-[10px] text-muted-foreground">Nexus Chat · Developed by KrynPy Studio</footer>
     </div>
   );
 }
 
-function PasswordField({
-  value,
-  onChange,
-  label = "Password",
-  autoComplete = "current-password",
-}: {
+function PasswordField({ label = "Password", value, onChange, autoComplete }: {
+  label?: string;
   value: string;
   onChange: (value: string) => void;
-  label?: string;
-  autoComplete?: string;
+  autoComplete: string;
 }) {
-  const [visible, setVisible] = useState(false);
   return (
     <label className="nexus-form-label">
       {label}
       <span className="relative">
-        <input
-          className="nexus-input pr-10"
-          type={visible ? "text" : "password"}
-          autoComplete={autoComplete}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="••••••••"
-        />{" "}
-        <button
-          type="button"
-          aria-label={visible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-          onClick={() => setVisible((current) => !current)}
-          className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-        >
-          {visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-        </button>
+        <LockKeyhole className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <input className="nexus-input pl-10" type="password" autoComplete={autoComplete} value={value} onChange={(event) => onChange(event.target.value)} placeholder="At least 8 characters" required minLength={8} />
       </span>
     </label>
   );
 }
 
+function AuthNotice({ children, error = false }: { children: React.ReactNode; error?: boolean }) {
+  return <p role={error ? "alert" : "status"} className={`rounded-xl border px-3 py-2 text-xs leading-5 ${error ? "border-destructive/30 bg-destructive/8 text-destructive" : "border-primary/20 bg-primary/8 text-muted-foreground"}`}>{children}</p>;
+}
+
 export function LoginView() {
-  const { actions } = useNexus();
+  const { actions, authUser, authLoading, authConfigured } = useNexus();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  function submit(event: FormEvent) {
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && authUser) void navigate({ to: "/messages", replace: true });
+  }, [authLoading, authUser, navigate]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError("Enter your email and password to continue.");
-      return;
+    setError("");
+    if (!authConfigured) return setError("Supabase is not configured yet. Add your project URL and anon key, then reload.");
+    setBusy(true);
+    try {
+      await actions.signIn(identifier, password);
+      await navigate({ to: "/messages", replace: true });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to sign in. Please try again.");
+    } finally {
+      setBusy(false);
     }
-    actions.setSession({ authenticated: true, email: email.trim(), pendingEmail: "" });
-    navigate({ to: "/messages" });
   }
+
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to pick up where you left off.">
-      <form className="space-y-4" onSubmit={submit}>
+      <form className="space-y-4" onSubmit={(event) => void submit(event)}>
         <label className="nexus-form-label">
-          Email address
+          Email or phone
           <span className="relative">
             <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              className="nexus-input pl-10"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                setError("");
-              }}
-              placeholder="you@example.com"
-            />
+            <input className="nexus-input pl-10" type="text" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com or +14155550123" required />
           </span>
         </label>
-        <PasswordField
-          value={password}
-          onChange={(value) => {
-            setPassword(value);
-            setError("");
-          }}
-        />
+        <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
         <div className="flex justify-end">
-          <button
-            type="button"
-            className="nexus-text-button text-xs"
-            onClick={() => setNotice("Password recovery is not connected in this local demo.")}
-          >
-            Forgot password?
-          </button>
+          <Link to="/reset-password" className="nexus-text-button text-xs">Forgot password?</Link>
         </div>
-        {error && (
-          <p className="nexus-form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <button type="submit" className="nexus-primary-button w-full">
-          Sign in <ArrowRight className="size-4" />
+        {error && <AuthNotice error>{error}</AuthNotice>}
+        <button type="submit" className="nexus-primary-button w-full" disabled={busy || authLoading}>
+          {busy ? <LoaderCircle className="size-4 animate-spin" /> : null} Log in <ArrowRight className="size-4" />
         </button>
       </form>
-      <div className="nexus-divider">
-        <span>or continue with</span>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            actions.setSession({ authenticated: true, email: "google-demo@nexus.chat" });
-            navigate({ to: "/messages" });
-          }}
-          className="nexus-secondary-button justify-center"
-        >
-          <span className="font-bold text-red-300">G</span> Google
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            actions.setSession({ authenticated: true, email: "apple-demo@nexus.chat" });
-            navigate({ to: "/messages" });
-          }}
-          className="nexus-secondary-button justify-center"
-        >
-          <Apple className="size-4" /> Apple
-        </button>
-      </div>
-      <p className="mt-5 text-center text-xs text-muted-foreground">
-        New to Nexus?{" "}
-        <Link to="/signup" className="nexus-text-button">
-          Create an account
-        </Link>
-      </p>
-      {notice && (
-        <p className="mt-4 rounded-xl border border-primary/20 bg-primary/8 px-3 py-2 text-center text-xs text-primary">
-          {notice}
-        </p>
-      )}
+      <p className="mt-5 text-center text-xs text-muted-foreground">Don't have an account? <Link to="/signup" className="nexus-text-button">Create account</Link></p>
     </AuthLayout>
   );
 }
 
 export function SignupView() {
-  const { actions } = useNexus();
+  const { actions, authUser, authLoading, authConfigured } = useNexus();
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [avatar, setAvatar] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  function handleAvatar(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") setAvatar(reader.result);
-    };
-    reader.readAsDataURL(file);
-  }
-  function submit(event: FormEvent) {
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && authUser) void navigate({ to: "/verify", replace: true });
+  }, [authLoading, authUser, navigate]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      fullName.trim().length < 2 ||
-      !email.includes("@") ||
-      username.trim().length < 3 ||
-      password.length < 8
-    ) {
-      setError("Use a name, valid email, username, and an 8-character password.");
-      return;
+    setError("");
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPhone = phone.replace(/[\s().-]/g, "");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return setError("Enter a valid email address.");
+    if (!/^\+[1-9]\d{7,14}$/.test(cleanPhone)) return setError("Enter a valid phone number with country code, such as +14155550123.");
+    if (password.length < 8) return setError("Your password must be at least 8 characters.");
+    if (password !== confirmPassword) return setError("The passwords do not match.");
+    if (!authConfigured) return setError("Supabase is not configured yet. Add your project URL and anon key, then reload.");
+    setBusy(true);
+    try {
+      await actions.signUp(cleanEmail, cleanPhone, password);
+      await navigate({ to: "/verify", replace: true });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to create your account.");
+    } finally {
+      setBusy(false);
     }
-    actions.updateProfile({
-      name: fullName.trim(),
-      username: `@${username.trim().replace(/^@/, "")}`,
-      email: email.trim(),
-      initials: fullName
-        .trim()
-        .split(" ")
-        .map((part) => part[0] ?? "")
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-      ...(avatar ? { avatar } : {}),
-    });
-    actions.setSession({ authenticated: false, pendingEmail: email.trim() });
-    navigate({ to: "/verify" });
   }
+
   return (
-    <AuthLayout title="Create your account" subtitle="Start a calmer, more connected way to chat.">
-      <form className="space-y-4" onSubmit={submit}>
-        <label className="nexus-form-label">
-          Full name
-          <span className="relative">
-            <UserRound className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              className="nexus-input pl-10"
-              value={fullName}
-              onChange={(event) => setFullName(event.target.value)}
-              placeholder="Kritartha Parasar"
-            />
-          </span>
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="nexus-form-label">
-            Email
-            <input
-              className="nexus-input"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-            />
-          </label>
-          <label className="nexus-form-label">
-            Username
-            <input
-              className="nexus-input"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="kritartha"
-            />
-          </label>
-        </div>
-        <PasswordField
-          label="Create password"
-          autoComplete="new-password"
-          value={password}
-          onChange={setPassword}
-        />
-        <label className="nexus-secondary-button w-full cursor-pointer justify-center">
-          <UserRound className="size-4" />
-          {avatar ? "Avatar selected" : "Add a profile avatar"}
-          <input type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
-        </label>
-        {error && (
-          <p className="nexus-form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <label className="flex items-start gap-2 text-[11px] leading-5 text-muted-foreground">
-          <input type="checkbox" required className="mt-1 accent-primary" />I agree to the demo
-          Terms of Service and Privacy Policy.
-        </label>
-        <button type="submit" className="nexus-primary-button w-full">
-          Create account <ArrowRight className="size-4" />
+    <AuthLayout title="Create your account" subtitle="Start with your email and phone. Your profile comes after verification.">
+      <form className="space-y-4" onSubmit={(event) => void submit(event)}>
+        <label className="nexus-form-label">Email / Gmail<span className="relative"><Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" /><input className="nexus-input pl-10" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></span></label>
+        <label className="nexus-form-label">Phone number<span className="relative"><Phone className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" /><input className="nexus-input pl-10" type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+14155550123" required /></span><span className="text-[10px] font-normal text-muted-foreground">Include your country code. This number is private.</span></label>
+        <PasswordField value={password} onChange={setPassword} autoComplete="new-password" />
+        <PasswordField label="Confirm password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
+        {error && <AuthNotice error>{error}</AuthNotice>}
+        <button type="submit" className="nexus-primary-button w-full" disabled={busy || authLoading}>
+          {busy ? <LoaderCircle className="size-4 animate-spin" /> : null} Create account <ArrowRight className="size-4" />
         </button>
       </form>
-      <p className="mt-5 text-center text-xs text-muted-foreground">
-        Already have an account?{" "}
-        <Link to="/login" className="nexus-text-button">
-          Sign in
-        </Link>
-      </p>
+      <p className="mt-5 text-center text-xs text-muted-foreground">Already have an account? <Link to="/login" className="nexus-text-button">Log in</Link></p>
+    </AuthLayout>
+  );
+}
+
+export function ResetPasswordView() {
+  const { actions, authConfigured, authLoading, authUser, passwordRecovery } = useNexus();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const resetMode = passwordRecovery && Boolean(authUser);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const description = params.get("error_description");
+    if (description) setError(description.replace(/\+/g, " "));
+  }, []);
+
+  async function request(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setError(""); setNotice(""); setBusy(true);
+    try { await actions.requestPasswordReset(email.trim()); setNotice("If that email belongs to an account, Supabase will send a password reset link."); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to send a password reset email."); }
+    finally { setBusy(false); }
+  }
+
+  async function reset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setError(""); setNotice("");
+    if (password.length < 8) return setError("Your password must be at least 8 characters.");
+    if (password !== confirm) return setError("The passwords do not match.");
+    setBusy(true);
+    try { await actions.updatePassword(password); setNotice("Your password has been changed."); await navigate({ to: "/messages", replace: true }); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "This reset link is invalid or expired. Request a new link."); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <AuthLayout title={resetMode ? "Choose a new password" : "Reset your password"} subtitle={resetMode ? "Set a new password for your Nexus Chat account." : "We'll send a secure reset link to your email address."} backTo="/login">
+      {!authConfigured ? <AuthNotice error>Configure Supabase before resetting a password.</AuthNotice> : authLoading ? <p className="text-center text-sm text-muted-foreground">Checking your reset link…</p> : resetMode ? (
+        <form className="space-y-4" onSubmit={(event) => void reset(event)}><PasswordField value={password} onChange={setPassword} autoComplete="new-password" /><PasswordField label="Confirm new password" value={confirm} onChange={setConfirm} autoComplete="new-password" />{error && <AuthNotice error>{error}</AuthNotice>}{notice && <AuthNotice>{notice}</AuthNotice>}<button type="submit" className="nexus-primary-button w-full" disabled={busy}>{busy ? <LoaderCircle className="size-4 animate-spin" /> : null} Update password</button></form>
+      ) : (
+        <form className="space-y-4" onSubmit={(event) => void request(event)}><label className="nexus-form-label">Account email<span className="relative"><Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" /><input className="nexus-input pl-10" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required placeholder="you@example.com" /></span></label>{error && <AuthNotice error>{error}</AuthNotice>}{notice && <AuthNotice>{notice}</AuthNotice>}<button type="submit" className="nexus-primary-button w-full" disabled={busy}>{busy ? <LoaderCircle className="size-4 animate-spin" /> : null} Send reset link</button><p className="text-center text-xs text-muted-foreground">If your link expired, request a new one here.</p></form>
+      )}
     </AuthLayout>
   );
 }
 
 export function VerifyView() {
-  const { state, actions } = useNexus();
+  const { actions, authUser, authLoading, authConfigured } = useNexus();
   const navigate = useNavigate();
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
-  const [seconds, setSeconds] = useState(28);
+  const [phoneCode, setPhoneCode] = useState("");
+  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const refs = useRef<Array<HTMLInputElement | null>>([]);
-  useEffect(() => {
-    if (seconds <= 0) return;
-    const timer = window.setInterval(() => setSeconds((current) => Math.max(0, current - 1)), 1000);
-    return () => window.clearInterval(timer);
-  }, [seconds]);
-  function updateDigit(index: number, value: string) {
-    const digit = value.replace(/\D/g, "").slice(-1);
-    setCode((current) => current.map((item, itemIndex) => (itemIndex === index ? digit : item)));
-    if (digit && index < 5) refs.current[index + 1]?.focus();
-    setError("");
-  }
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const entered = code.join("");
-    if (entered !== state.session.verificationCode) {
-      setError(`That code does not match. This demo uses ${state.session.verificationCode}.`);
-      return;
-    }
-    actions.setSession({
-      authenticated: true,
-      email: state.session.pendingEmail || state.session.email,
-    });
-    navigate({ to: "/messages" });
-  }
-  return (
-    <AuthLayout
-      title="Verify your phone"
-      subtitle={`Enter the 6-digit code sent to ${state.session.pendingEmail || "your contact"}.`}
-      backTo="/signup"
-    >
-      <form onSubmit={submit}>
-        <div className="flex justify-center gap-2">
-          {code.map((digit, index) => (
-            <input
-              key={index}
-              ref={(element) => {
-                refs.current[index] = element;
-              }}
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(event) => updateDigit(index, event.target.value)}
-              className="nexus-code-input"
-              aria-label={`Verification digit ${index + 1}`}
-            />
-          ))}
-        </div>
-        <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-primary/15 bg-primary/8 px-3 py-2 text-[11px] text-primary">
-          <ShieldCheck className="size-3.5" /> Demo code: {state.session.verificationCode}
-        </div>
-        {error && (
-          <p className="nexus-form-error mt-4 text-center" role="alert">
-            {error}
-          </p>
-        )}
-        <button type="submit" className="nexus-primary-button mt-5 w-full">
-          Verify account <Check className="size-4" />
-        </button>
-      </form>
-      <div className="mt-5 text-center text-xs text-muted-foreground">
-        {seconds > 0 ? (
-          <>
-            Resend code in{" "}
-            <span className="font-semibold text-foreground">
-              00:{String(seconds).padStart(2, "0")}
-            </span>
-          </>
-        ) : (
-          <button type="button" className="nexus-text-button" onClick={() => setSeconds(28)}>
-            Resend code
-          </button>
-        )}
-      </div>
-      <div className="mt-6 flex items-center justify-center gap-2 text-[10px] text-muted-foreground">
-        <LockKeyhole className="size-3" /> Demo verification only. No SMS is sent.
-      </div>
-    </AuthLayout>
-  );
-}
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const requested = useRef(false);
+  const phone = typeof authUser?.user_metadata["signup_phone"] === "string" ? authUser.user_metadata["signup_phone"] : "";
+  const emailVerified = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at);
+  const phoneVerified = Boolean(authUser?.phone_confirmed_at && authUser.phone);
 
-export function AuthHint({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    if (emailVerified && phoneVerified) void navigate({ to: "/profile", replace: true });
+  }, [emailVerified, phoneVerified, navigate]);
+
+  useEffect(() => {
+    if (authLoading || !authUser || !emailVerified || phoneVerified || requested.current) return;
+    requested.current = true;
+    setSending(true);
+    void actions.sendPhoneVerification().then(() => {
+      setNotice(`A verification code was sent to ${phone}.`);
+    }).catch((reason: unknown) => {
+      setError(reason instanceof Error ? reason.message : "Unable to send a phone verification code.");
+    }).finally(() => setSending(false));
+  }, [actions, authLoading, authUser, emailVerified, phoneVerified, phone]);
+
+  async function resend() {
+    setError("");
+    setNotice("");
+    setSending(true);
+    try {
+      await actions.sendPhoneVerification();
+      setNotice(`A verification code was sent to ${phone}.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unable to send a phone verification code.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function verify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setVerifying(true);
+    try {
+      await actions.verifyPhone(phoneCode.trim());
+      await navigate({ to: "/profile", replace: true });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Phone verification failed.");
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  if (!authConfigured) {
+    return <AuthLayout title="Verify your account" subtitle="Supabase must be configured before account verification can continue."><AuthNotice error>Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then reload this page.</AuthNotice></AuthLayout>;
+  }
+  if (authLoading) return <AuthLayout title="Checking verification" subtitle="Restoring your secure session."><p className="text-center text-sm text-muted-foreground">Loading…</p></AuthLayout>;
+  if (!authUser || !emailVerified) {
+    return (
+      <AuthLayout title="Verify your email" subtitle="Open the confirmation link sent by Supabase to activate your account." backTo="/signup">
+        <div className="space-y-4 text-center">
+          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Mail className="size-5" /></span>
+          <p className="text-sm leading-6 text-muted-foreground">After confirming your email, this page will continue to phone verification. If you already confirmed, open the link again to return here.</p>
+          {authUser?.email && <AuthNotice>A confirmation email was sent to {authUser.email}.</AuthNotice>}
+          <Link to="/login" className="nexus-secondary-button w-full justify-center">Return to log in</Link>
+        </div>
+      </AuthLayout>
+    );
+  }
+  if (!phone) {
+    return <AuthLayout title="Phone verification required" subtitle="No phone number was attached to this signup."><AuthNotice error>Sign up again with a phone number in international format.</AuthNotice></AuthLayout>;
+  }
   return (
-    <Modal title="Demo authentication" onClose={onClose}>
-      <p className="text-sm leading-6 text-muted-foreground">
-        This build keeps auth state in localStorage for prototyping. Replace the session actions
-        with your identity provider before using real accounts.
-      </p>
-    </Modal>
+    <AuthLayout title="Verify your phone" subtitle={`Enter the code sent to ${phone}.`} backTo="/login">
+      <form className="space-y-4" onSubmit={(event) => void verify(event)}>
+        <AuthNotice><ShieldCheck className="mr-1 inline size-3.5" />Email verified. Complete phone verification to continue.</AuthNotice>
+        {notice && <AuthNotice>{notice}</AuthNotice>}
+        <label className="nexus-form-label">6-digit code<input className="nexus-input text-center text-lg tracking-[0.4em]" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={phoneCode} onChange={(event) => setPhoneCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required /></label>
+        {error && <AuthNotice error>{error}</AuthNotice>}
+        <button type="submit" className="nexus-primary-button w-full" disabled={verifying || phoneCode.length !== 6}>{verifying ? <LoaderCircle className="size-4 animate-spin" /> : null} Verify phone</button>
+        <button type="button" className="nexus-text-button w-full justify-center" onClick={() => void resend()} disabled={sending}>{sending ? "Sending code…" : "Resend code"}</button>
+      </form>
+    </AuthLayout>
   );
 }

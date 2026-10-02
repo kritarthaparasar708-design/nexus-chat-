@@ -1,9 +1,6 @@
 export type Presence = "online" | "away" | "offline";
-
 export type ConversationKind = "direct" | "group";
-
 export type MessageStatus = "sending" | "sent" | "delivered" | "read";
-
 export type AttachmentKind = "image" | "video" | "file" | "audio";
 
 export type Attachment = {
@@ -23,14 +20,22 @@ export type User = {
   username: string;
   initials: string;
   avatar: string;
-  status: Presence;
-  lastSeen: string;
   bio: string;
   email: string;
   phone: string;
   website: string;
   location: string;
   joinedAt: string;
+};
+
+export type Profile = {
+  id: string;
+  display_name: string;
+  username: string;
+  bio: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Message = {
@@ -55,10 +60,9 @@ export type Conversation = {
   id: string;
   kind: ConversationKind;
   name: string;
+  username: string;
   initials: string;
   avatar: string;
-  status: Presence;
-  lastSeen: string;
   unread: number;
   pinned: boolean;
   muted: boolean;
@@ -70,22 +74,18 @@ export type Conversation = {
 };
 
 export type FriendState = "accepted" | "pending-incoming" | "pending-outgoing";
-
 export type Friend = {
   id: string;
   name: string;
   username: string;
   initials: string;
   avatar: string;
-  status: Presence;
-  lastSeen: string;
   state: FriendState;
   mutualGroups: number;
+  bio?: string;
 };
 
-export type NotificationType =
-  "message" | "friend-request" | "friend-accepted" | "mention" | "group-activity";
-
+export type NotificationType = "message" | "friend-request" | "friend-accepted" | "mention" | "group-activity";
 export type Notification = {
   id: string;
   type: NotificationType;
@@ -98,7 +98,6 @@ export type Notification = {
 };
 
 export type StoryKind = "text" | "image";
-
 export type Story = {
   id: string;
   authorId: string;
@@ -120,17 +119,9 @@ export type Settings = {
   compactMode: boolean;
   readReceipts: boolean;
   onlineStatus: boolean;
-  demoMode: boolean;
 };
 
-export type DemoSession = {
-  authenticated: boolean;
-  email: string;
-  pendingEmail: string;
-  verificationCode: string;
-};
-
-export type DemoState = {
+export type NexusState = {
   currentUser: User;
   conversations: Conversation[];
   friends: Friend[];
@@ -138,11 +129,6 @@ export type DemoState = {
   stories: Story[];
   recentSearches: string[];
   settings: Settings;
-  session: DemoSession;
 };
 
-export type NewMessageInput = {
-  text: string;
-  attachments?: Attachment[];
-  replyToId?: string | null;
-};
+export type NewMessageInput = { text: string };

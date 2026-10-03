@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ChevronDown,
   Eye,
   EyeOff,
   Globe2,
@@ -21,6 +22,22 @@ import {
 import { Link, useNavigate } from "@tanstack/react-router";
 import { BrandMark } from "./primitives";
 import { useNexus } from "./state";
+
+const SIGNUP_PHONE_COUNTRIES = [
+  { iso: "IN", name: "India", dialCode: "+91", flag: "🇮🇳" },
+  { iso: "US", name: "United States", dialCode: "+1", flag: "🇺🇸" },
+  { iso: "GB", name: "United Kingdom", dialCode: "+44", flag: "🇬🇧" },
+  { iso: "CA", name: "Canada", dialCode: "+1", flag: "🇨🇦" },
+  { iso: "AU", name: "Australia", dialCode: "+61", flag: "🇦🇺" },
+  { iso: "NZ", name: "New Zealand", dialCode: "+64", flag: "🇳🇿" },
+  { iso: "SG", name: "Singapore", dialCode: "+65", flag: "🇸🇬" },
+  { iso: "AE", name: "United Arab Emirates", dialCode: "+971", flag: "🇦🇪" },
+  { iso: "FR", name: "France", dialCode: "+33", flag: "🇫🇷" },
+  { iso: "DE", name: "Germany", dialCode: "+49", flag: "🇩🇪" },
+  { iso: "JP", name: "Japan", dialCode: "+81", flag: "🇯🇵" },
+  { iso: "BR", name: "Brazil", dialCode: "+55", flag: "🇧🇷" },
+  { iso: "ZA", name: "South Africa", dialCode: "+27", flag: "🇿🇦" },
+] as const;
 
 function AuthLayout({
   title,
@@ -446,6 +463,7 @@ export function SignupView() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [countryIso, setCountryIso] = useState("IN");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -455,6 +473,9 @@ export function SignupView() {
     "email" | "phone" | "password" | "confirm" | "form" | null
   >(null);
   const [busy, setBusy] = useState(false);
+  const selectedCountry =
+    SIGNUP_PHONE_COUNTRIES.find((country) => country.iso === countryIso) ??
+    SIGNUP_PHONE_COUNTRIES[0];
 
   useEffect(() => {
     if (!authLoading && authUser) void navigate({ to: "/verify", replace: true });
@@ -465,14 +486,28 @@ export function SignupView() {
     setError("");
     setErrorField(null);
     const cleanEmail = email.trim().toLowerCase();
-    const cleanPhone = phone.replace(/[\s().-]/g, "");
+    const compactPhone = phone.trim().replace(/[\s().-]/g, "");
+    const hasInternationalPrefix = compactPhone.startsWith("+") || compactPhone.startsWith("00");
+    let nationalDigits = compactPhone.replace(/\D/g, "");
+    const callingCodeDigits = selectedCountry.dialCode.slice(1);
+    if (hasInternationalPrefix) {
+      nationalDigits = nationalDigits.replace(/^00/, "");
+      if (!nationalDigits.startsWith(callingCodeDigits)) {
+        setError("Invalid phone number. Choose the matching country code and try again.");
+        setErrorField("phone");
+        return;
+      }
+      nationalDigits = nationalDigits.slice(callingCodeDigits.length);
+    }
+    nationalDigits = nationalDigits.replace(/^0+/, "");
+    const cleanPhone = `${selectedCountry.dialCode}${nationalDigits}`;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setError("Invalid email address.");
       setErrorField("email");
       return;
     }
-    if (!/^\+[1-9]\d{7,14}$/.test(cleanPhone)) {
-      setError("Invalid phone number. Include your country code, for example +91 98765 43210.");
+    if (/[^\d+]/.test(compactPhone) || !/^\+[1-9]\d{7,14}$/.test(cleanPhone)) {
+      setError("Invalid phone number. Check the number and country calling code.");
       setErrorField("phone");
       return;
     }
@@ -562,6 +597,49 @@ export function SignupView() {
               </p>
             </div>
 
+            <div
+              className="nexus-login-social nexus-signup-social"
+              role="group"
+              aria-label="Social signup options"
+              aria-describedby="nexus-signup-social-status"
+            >
+              <button
+                type="button"
+                className="nexus-login-social-button"
+                disabled
+                title="Google signup is unavailable until Google is configured in Supabase."
+              >
+                <svg className="nexus-signup-provider-icon" viewBox="0 0 48 48" aria-hidden="true">
+                  <path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.8-.4-4.1H24v7.8h11a9.4 9.4 0 0 1-4.1 6.2v5.1h6.6c3.9-3.6 6.1-8.8 6.1-15Z" />
+                  <path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.6-5.1c-1.8 1.2-4 1.9-6.9 1.9-5.3 0-9.8-3.6-11.4-8.4H5.8v5.3A20 20 0 0 0 24 44Z" />
+                  <path fill="#FBBC05" d="M12.6 27.5a12 12 0 0 1 0-7v-5.3H5.8a20 20 0 0 0 0 17.6l6.8-5.3Z" />
+                  <path fill="#EA4335" d="M24 12.1c3 0 5.7 1 7.8 3.1l5.8-5.8C34.1 6.1 29.5 4 24 4A20 20 0 0 0 5.8 15.2l6.8 5.3c1.6-4.8 6.1-8.4 11.4-8.4Z" />
+                </svg>
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                className="nexus-login-social-button"
+                disabled
+                title="Apple signup is unavailable until Apple is configured in Supabase."
+              >
+                <svg className="nexus-signup-provider-icon nexus-signup-apple-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M16.37 12.43c.02 2.12 1.86 2.83 1.88 2.84-.02.05-.29 1.02-.96 2.02-.58.86-1.19 1.72-2.14 1.74-.93.02-1.23-.56-2.3-.56-1.06 0-1.4.54-2.28.58-.91.04-1.6-.93-2.18-1.78-1.19-1.72-2.1-4.86-.88-6.98.61-1.05 1.7-1.72 2.88-1.74.9-.02 1.74.61 2.29.61.54 0 1.56-.76 2.63-.65.45.02 1.72.18 2.54 1.38-.07.04-1.52.89-1.5 2.54Zm-1.73-5.1c.48-.58.81-1.39.72-2.19-.7.03-1.55.46-2.05 1.04-.45.52-.84 1.34-.73 2.12.78.06 1.58-.4 2.06-.97Z" />
+                </svg>
+                Continue with Apple
+              </button>
+            </div>
+            <p
+              id="nexus-signup-social-status"
+              className="nexus-login-social-note nexus-signup-social-status"
+            >
+              Google and Apple signup are unavailable until their providers are enabled in Supabase.
+            </p>
+
+            <div className="nexus-divider nexus-login-divider nexus-signup-divider" aria-hidden="true">
+              <span>OR</span>
+            </div>
+
             <form
               className="nexus-login-form nexus-signup-form"
               onSubmit={(event) => void submit(event)}
@@ -586,7 +664,7 @@ export function SignupView() {
                       setError("");
                       setErrorField(null);
                     }}
-                    placeholder="Enter your email"
+                    placeholder="Enter your email address"
                     aria-invalid={errorField === "email"}
                     aria-describedby={errorField === "email" ? "nexus-signup-error" : undefined}
                     required
@@ -601,26 +679,52 @@ export function SignupView() {
 
               <div className="nexus-login-field">
                 <label htmlFor="nexus-signup-phone">Phone number</label>
-                <span className="nexus-login-input-wrap">
-                  <Phone className="nexus-login-input-icon" aria-hidden="true" />
-                  <input
-                    id="nexus-signup-phone"
-                    className="nexus-login-input"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    value={phone}
-                    onChange={(event) => {
-                      setPhone(event.target.value);
-                      setError("");
-                      setErrorField(null);
-                    }}
-                    placeholder="+91 98765 43210"
-                    aria-invalid={errorField === "phone"}
-                    aria-describedby={`nexus-signup-phone-help${errorField === "phone" ? " nexus-signup-error" : ""}`}
-                    required
-                  />
-                </span>
+                <div className="nexus-signup-phone-control">
+                  <span className="nexus-signup-country-select-wrap">
+                    <span className="nexus-signup-country-display" aria-hidden="true">
+                      <span className="nexus-signup-country-flag">{selectedCountry.flag}</span>
+                      <span>{selectedCountry.dialCode}</span>
+                      <ChevronDown className="nexus-signup-country-chevron" />
+                    </span>
+                    <select
+                      id="nexus-signup-country"
+                      className="nexus-signup-country-select"
+                      value={countryIso}
+                      aria-label="Country calling code"
+                      onChange={(event) => {
+                        setCountryIso(event.target.value);
+                        setError("");
+                        setErrorField(null);
+                      }}
+                    >
+                      {SIGNUP_PHONE_COUNTRIES.map((country) => (
+                        <option key={country.iso} value={country.iso}>
+                          {country.flag} {country.name} ({country.dialCode})
+                        </option>
+                      ))}
+                    </select>
+                  </span>
+                  <span className="nexus-login-input-wrap nexus-signup-phone-input-wrap">
+                    <Phone className="nexus-login-input-icon" aria-hidden="true" />
+                    <input
+                      id="nexus-signup-phone"
+                      className="nexus-login-input nexus-signup-phone-input"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      value={phone}
+                      onChange={(event) => {
+                        setPhone(event.target.value);
+                        setError("");
+                        setErrorField(null);
+                      }}
+                      placeholder="Enter your phone number"
+                      aria-invalid={errorField === "phone"}
+                      aria-describedby={`nexus-signup-phone-help${errorField === "phone" ? " nexus-signup-error" : ""}`}
+                      required
+                    />
+                  </span>
+                </div>
                 <span id="nexus-signup-phone-help" className="nexus-signup-field-help">
                   Include your country code. This number is private.
                 </span>

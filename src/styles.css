@@ -2204,3 +2204,151 @@ mark {
     transition: none;
   }
 }
+
+/* Signup-only controls inherit the login page's shared dark surfaces and focus language. */
+.nexus-signup-social {
+  gap: 0.62rem;
+  margin-top: 1.15rem;
+}
+.nexus-signup-social .nexus-login-social-button {
+  min-height: 3rem;
+  opacity: 0.78;
+  transition: border-color 160ms ease, background 160ms ease, opacity 160ms ease;
+}
+.nexus-signup-social .nexus-login-social-button:disabled {
+  cursor: not-allowed;
+}
+.nexus-signup-provider-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}
+.nexus-signup-apple-icon {
+  fill: #e9e6f2;
+}
+.nexus-signup-social-status {
+  margin-top: 0.42rem;
+}
+.nexus-signup-divider {
+  margin: 1rem 0 0.82rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+}
+.nexus-signup-form {
+  margin-top: 0;
+}
+.nexus-signup-phone-control {
+  display: flex;
+  min-width: 0;
+  min-height: 3.15rem;
+  overflow: hidden;
+  align-items: stretch;
+  border: 1px solid rgb(196 181 253 / 13%);
+  border-radius: 0.8rem;
+  background: linear-gradient(110deg, rgb(255 255 255 / 3%), rgb(255 255 255 / 1.5%));
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+.nexus-signup-phone-control:hover {
+  border-color: rgb(196 181 253 / 24%);
+}
+.nexus-signup-phone-control:focus-within {
+  border-color: rgb(168 85 247 / 75%);
+  background: rgb(168 85 247 / 4%);
+  box-shadow: 0 0 0 3px rgb(139 92 246 / 16%), 0 0 26px -17px rgb(168 85 247 / 62%);
+}
+.nexus-signup-phone-control:has(input[aria-invalid="true"]) {
+  border-color: rgb(248 113 113 / 68%);
+}
+.nexus-signup-country-select-wrap {
+  position: relative;
+  display: flex;
+  width: 8.25rem;
+  flex: 0 0 8.25rem;
+  align-items: center;
+  border-right: 1px solid rgb(196 181 253 / 13%);
+}
+.nexus-signup-country-display {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  gap: 0.48rem;
+  padding-inline: 0.78rem;
+  color: #e7e3ef;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+.nexus-signup-country-flag {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.nexus-signup-country-chevron {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-left: auto;
+  color: #a49db2;
+}
+.nexus-signup-country-select {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.nexus-signup-phone-input-wrap {
+  flex: 1 1 auto;
+}
+.nexus-signup-phone-input-wrap .nexus-login-input-icon {
+  left: 0.78rem;
+}
+.nexus-signup-phone-input {
+  min-height: 3rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0.75rem 0.75rem 0.75rem 2.35rem;
+}
+.nexus-signup-phone-input:hover,
+.nexus-signup-phone-input:focus {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.nexus-signup-social + .nexus-login-social-note {
+  margin-top: 0.42rem;
+  font-size: 0.59rem;
+}
+@media (max-width: 760px) {
+  .nexus-signup-social {
+    margin-top: 1.2rem;
+  }
+  .nexus-signup-divider {
+    margin-block: 0.95rem 0.8rem;
+  }
+}
+@media (max-width: 420px) {
+  .nexus-signup-country-select-wrap {
+    width: 7.15rem;
+    flex-basis: 7.15rem;
+  }
+  .nexus-signup-country-display {
+    gap: 0.38rem;
+    padding-inline: 0.62rem;
+  }
+  .nexus-signup-phone-input {
+    padding-left: 2.1rem;
+    font-size: 0.7rem;
+  }
+  .nexus-signup-phone-input-wrap .nexus-login-input-icon {
+    left: 0.62rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-signup-phone-control,
+  .nexus-signup-social .nexus-login-social-button {
+    transition: none;
+  }
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  Check,
   Eye,
   EyeOff,
   Globe2,
@@ -11,6 +12,7 @@ import {
   Mail,
   MessageCircle,
   Phone,
+  Search,
   ShieldCheck,
   Sparkles,
   UsersRound,
@@ -72,6 +74,24 @@ function PasswordField({ label = "Password", value, onChange, autoComplete }: {
 
 function AuthNotice({ children, error = false }: { children: React.ReactNode; error?: boolean }) {
   return <p role={error ? "alert" : "status"} className={`rounded-xl border px-3 py-2 text-xs leading-5 ${error ? "border-destructive/30 bg-destructive/8 text-destructive" : "border-primary/20 bg-primary/8 text-muted-foreground"}`}>{children}</p>;
+}
+
+function phoneVerificationError(reason: unknown, fallback: string): string {
+  const message = reason instanceof Error ? reason.message.toLowerCase() : "";
+  const isDuplicatePhone =
+    message.includes("phone") &&
+    ["already", "registered", "exists", "taken"].some((part) => message.includes(part));
+  if (isDuplicatePhone) {
+    return "Phone number already registered. Log in or use a different number.";
+  }
+  if (
+    message.includes("failed to fetch") ||
+    message.includes("network") ||
+    message.includes("fetch")
+  ) {
+    return "Unable to connect to the authentication service. Check your connection and try again.";
+  }
+  return reason instanceof Error && reason.message ? reason.message : fallback;
 }
 
 export function LoginView() {
@@ -428,7 +448,12 @@ export function SignupView() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<
+    "email" | "phone" | "password" | "confirm" | "form" | null
+  >(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -438,38 +463,381 @@ export function SignupView() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setErrorField(null);
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = phone.replace(/[\s().-]/g, "");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return setError("Enter a valid email address.");
-    if (!/^\+[1-9]\d{7,14}$/.test(cleanPhone)) return setError("Enter a valid phone number with country code, such as +14155550123.");
-    if (password.length < 8) return setError("Your password must be at least 8 characters.");
-    if (password !== confirmPassword) return setError("The passwords do not match.");
-    if (!authConfigured) return setError("Supabase is not configured yet. Add your project URL and anon key, then reload.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setError("Invalid email address.");
+      setErrorField("email");
+      return;
+    }
+    if (!/^\+[1-9]\d{7,14}$/.test(cleanPhone)) {
+      setError("Invalid phone number. Include your country code, for example +91 98765 43210.");
+      setErrorField("phone");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      setErrorField("password");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setErrorField("confirm");
+      return;
+    }
+    if (!authConfigured) {
+      setError(
+        "Unable to connect to the authentication service. Please contact the administrator.",
+      );
+      setErrorField("form");
+      return;
+    }
     setBusy(true);
     try {
       await actions.signUp(cleanEmail, cleanPhone, password);
       await navigate({ to: "/verify", replace: true });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to create your account.");
+      const message = reason instanceof Error ? reason.message.toLowerCase() : "";
+      if (
+        (message.includes("email") &&
+          (message.includes("already") ||
+            message.includes("registered") ||
+            message.includes("exists"))) ||
+        message.includes("user already registered")
+      ) {
+        setError("Email already registered. Log in or use another email address.");
+      } else if (
+        message.includes("phone") &&
+        (message.includes("already") ||
+          message.includes("registered") ||
+          message.includes("exists"))
+      ) {
+        setError("Phone number already registered. Use another number or log in.");
+      } else if (message.includes("invalid email")) {
+        setError("Invalid email address.");
+        setErrorField("email");
+      } else if (
+        message.includes("failed to fetch") ||
+        message.includes("network") ||
+        message.includes("fetch")
+      ) {
+        setError(
+          "Unable to connect to the authentication service. Check your connection and try again.",
+        );
+      } else {
+        setError("Unable to create your account. Please try again.");
+      }
+      setErrorField((current) => current ?? "form");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <AuthLayout title="Create your account" subtitle="Start with your email and phone. Your profile comes after verification.">
-      <form className="space-y-4" onSubmit={(event) => void submit(event)}>
-        <label className="nexus-form-label">Email / Gmail<span className="relative"><Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" /><input className="nexus-input pl-10" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></span></label>
-        <label className="nexus-form-label">Phone number<span className="relative"><Phone className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" /><input className="nexus-input pl-10" type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+14155550123" required /></span><span className="text-[10px] font-normal text-muted-foreground">Include your country code. This number is private.</span></label>
-        <PasswordField value={password} onChange={setPassword} autoComplete="new-password" />
-        <PasswordField label="Confirm password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
-        {error && <AuthNotice error>{error}</AuthNotice>}
-        <button type="submit" className="nexus-primary-button w-full" disabled={busy || authLoading}>
-          {busy ? <LoaderCircle className="size-4 animate-spin" /> : null} Create account <ArrowRight className="size-4" />
-        </button>
-      </form>
-      <p className="mt-5 text-center text-xs text-muted-foreground">Already have an account? <Link to="/login" className="nexus-text-button">Log in</Link></p>
-    </AuthLayout>
+    <div className="nexus-auth-page nexus-login-page nexus-signup-page">
+      <div className="nexus-login-ambient" aria-hidden="true" />
+      <main className="nexus-login-main">
+        <section className="nexus-login-card nexus-signup-card" aria-label="Create a Nexus account">
+          <div className="nexus-login-form-panel nexus-signup-form-panel">
+            <Link to="/welcome" className="nexus-login-brand" aria-label="Nexus Chat home">
+              <BrandMark compact />
+              <span className="nexus-login-brand-copy">
+                <strong>Nexus</strong>
+                <small>Chat Beyond Limits</small>
+              </span>
+            </Link>
+
+            <div className="nexus-login-intro nexus-signup-intro">
+              <span className="nexus-login-eyebrow">
+                <Sparkles className="size-3.5" aria-hidden="true" /> YOUR SPACE, YOUR PEOPLE
+              </span>
+              <h1 id="nexus-signup-title">
+                Create your
+                <br /> <span>Nexus</span> account
+              </h1>
+              <p>
+                Create your account and start chatting,
+                <br className="hidden sm:block" /> sharing moments, and staying connected.
+              </p>
+            </div>
+
+            <form
+              className="nexus-login-form nexus-signup-form"
+              onSubmit={(event) => void submit(event)}
+              aria-labelledby="nexus-signup-title"
+              noValidate
+            >
+              <div className="nexus-login-field">
+                <label htmlFor="nexus-signup-email">Email / Gmail</label>
+                <span className="nexus-login-input-wrap">
+                  <Mail className="nexus-login-input-icon" aria-hidden="true" />
+                  <input
+                    id="nexus-signup-email"
+                    className="nexus-login-input"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      setError("");
+                      setErrorField(null);
+                    }}
+                    placeholder="Enter your email"
+                    aria-invalid={errorField === "email"}
+                    aria-describedby={errorField === "email" ? "nexus-signup-error" : undefined}
+                    required
+                  />
+                </span>
+                {errorField === "email" && (
+                  <p id="nexus-signup-error" className="nexus-login-error" role="alert">
+                    {error}
+                  </p>
+                )}
+              </div>
+
+              <div className="nexus-login-field">
+                <label htmlFor="nexus-signup-phone">Phone number</label>
+                <span className="nexus-login-input-wrap">
+                  <Phone className="nexus-login-input-icon" aria-hidden="true" />
+                  <input
+                    id="nexus-signup-phone"
+                    className="nexus-login-input"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(event) => {
+                      setPhone(event.target.value);
+                      setError("");
+                      setErrorField(null);
+                    }}
+                    placeholder="+91 98765 43210"
+                    aria-invalid={errorField === "phone"}
+                    aria-describedby={`nexus-signup-phone-help${errorField === "phone" ? " nexus-signup-error" : ""}`}
+                    required
+                  />
+                </span>
+                <span id="nexus-signup-phone-help" className="nexus-signup-field-help">
+                  Include your country code. This number is private.
+                </span>
+                {errorField === "phone" && (
+                  <p id="nexus-signup-error" className="nexus-login-error" role="alert">
+                    {error}
+                  </p>
+                )}
+              </div>
+
+              <div className="nexus-login-field">
+                <label htmlFor="nexus-signup-password">Password</label>
+                <span className="nexus-login-input-wrap">
+                  <LockKeyhole className="nexus-login-input-icon" aria-hidden="true" />
+                  <input
+                    id="nexus-signup-password"
+                    className="nexus-login-input nexus-login-password-input"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      setError("");
+                      setErrorField(null);
+                    }}
+                    placeholder="Create a password"
+                    aria-invalid={errorField === "password"}
+                    aria-describedby={errorField === "password" ? "nexus-signup-error" : undefined}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="nexus-password-toggle"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </span>
+                {errorField === "password" && (
+                  <p id="nexus-signup-error" className="nexus-login-error" role="alert">
+                    {error}
+                  </p>
+                )}
+              </div>
+
+              <div className="nexus-login-field">
+                <label htmlFor="nexus-signup-confirm-password">Confirm password</label>
+                <span className="nexus-login-input-wrap">
+                  <LockKeyhole className="nexus-login-input-icon" aria-hidden="true" />
+                  <input
+                    id="nexus-signup-confirm-password"
+                    className="nexus-login-input nexus-login-password-input"
+                    type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(event) => {
+                      setConfirmPassword(event.target.value);
+                      setError("");
+                      setErrorField(null);
+                    }}
+                    placeholder="Confirm your password"
+                    aria-invalid={errorField === "confirm"}
+                    aria-describedby={errorField === "confirm" ? "nexus-signup-error" : undefined}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="nexus-password-toggle"
+                    onClick={() => setShowConfirmPassword((visible) => !visible)}
+                    aria-label={
+                      showConfirmPassword ? "Hide confirm password" : "Show confirm password"
+                    }
+                    aria-pressed={showConfirmPassword}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </span>
+                {errorField === "confirm" && (
+                  <p id="nexus-signup-error" className="nexus-login-error" role="alert">
+                    {error}
+                  </p>
+                )}
+              </div>
+
+              {error &&
+                errorField !== "email" &&
+                errorField !== "phone" &&
+                errorField !== "password" &&
+                errorField !== "confirm" && (
+                  <p id="nexus-signup-error" className="nexus-login-error" role="alert">
+                    {error}
+                  </p>
+                )}
+
+              <button
+                type="submit"
+                className="nexus-login-submit nexus-signup-submit"
+                disabled={busy || authLoading}
+                aria-busy={busy}
+              >
+                <span>{busy ? "Creating account..." : "Create account"}</span>
+                {busy ? (
+                  <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                )}
+              </button>
+            </form>
+
+            <p className="nexus-login-signup">
+              Already have an account?{" "}
+              <Link to="/login" className="nexus-login-link">
+                Log in
+              </Link>
+            </p>
+          </div>
+
+          <aside
+            className="nexus-login-promo nexus-signup-promo"
+            aria-labelledby="nexus-signup-promo-title"
+          >
+            <div className="nexus-login-promo-copy nexus-signup-promo-copy">
+              <span className="nexus-login-promo-kicker">
+                <span className="nexus-live-dot" aria-hidden="true" /> THE NEXUS CONNECTION
+              </span>
+              <h2 id="nexus-signup-promo-title">Connect. Chat. Stay Close.</h2>
+              <p>
+                Everything you need to stay connected
+                <br className="hidden sm:block" /> with the people who matter.
+              </p>
+            </div>
+
+            <div className="nexus-signup-artwork" aria-hidden="true">
+              <div className="nexus-signup-network-orbit nexus-signup-network-orbit-one" />
+              <div className="nexus-signup-network-orbit nexus-signup-network-orbit-two" />
+              <div className="nexus-signup-contact-card nexus-signup-contact-one">
+                <span className="nexus-signup-avatar nexus-signup-avatar-violet">M</span>
+                <span className="nexus-signup-contact-copy">
+                  <strong>Maya Chen</strong>
+                  <small>
+                    <i /> Online now
+                  </small>
+                </span>
+                <MessageCircle className="nexus-signup-contact-icon" />
+              </div>
+              <div className="nexus-signup-contact-card nexus-signup-contact-two">
+                <span className="nexus-signup-avatar nexus-signup-avatar-blue">T</span>
+                <span className="nexus-signup-contact-copy">
+                  <strong>Theo Park</strong>
+                  <small>New conversation</small>
+                </span>
+                <span className="nexus-signup-unread">2</span>
+              </div>
+              <div className="nexus-signup-connected">
+                <span className="nexus-signup-connected-icon">
+                  <Check className="size-4" />
+                </span>
+                <span>
+                  <strong>You're connected</strong>
+                  <small>Your people, all in one place</small>
+                </span>
+              </div>
+              <div className="nexus-signup-message-float">
+                <span className="nexus-signup-message-mark">
+                  <MessageCircle className="size-3.5" />
+                </span>
+                <span>Good to hear from you ✨</span>
+              </div>
+            </div>
+
+            <div className="nexus-login-features nexus-signup-features" aria-label="Nexus features">
+              <div>
+                <Zap aria-hidden="true" />
+                <span>
+                  <strong>Real-time</strong>
+                  <small>Messaging</small>
+                </span>
+              </div>
+              <div>
+                <UsersRound aria-hidden="true" />
+                <span>
+                  <strong>Stay Connected</strong>
+                  <small>With Friends</small>
+                </span>
+              </div>
+              <div>
+                <Search aria-hidden="true" />
+                <span>
+                  <strong>Find People</strong>
+                  <small>Instantly</small>
+                </span>
+              </div>
+              <div>
+                <Globe2 aria-hidden="true" />
+                <span>
+                  <strong>Available</strong>
+                  <small>Everywhere</small>
+                </span>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+      <footer className="nexus-login-footer">
+        Nexus Chat <span>·</span> Chat Beyond Limits
+      </footer>
+    </div>
   );
 }
 
@@ -543,7 +911,7 @@ export function VerifyView() {
     void actions.sendPhoneVerification().then(() => {
       setNotice(`A verification code was sent to ${phone}.`);
     }).catch((reason: unknown) => {
-      setError(reason instanceof Error ? reason.message : "Unable to send a phone verification code.");
+      setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
     }).finally(() => setSending(false));
   }, [actions, authLoading, authUser, emailVerified, phoneVerified, phone]);
 
@@ -555,7 +923,7 @@ export function VerifyView() {
       await actions.sendPhoneVerification();
       setNotice(`A verification code was sent to ${phone}.`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to send a phone verification code.");
+      setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
     } finally {
       setSending(false);
     }
@@ -569,7 +937,7 @@ export function VerifyView() {
       await actions.verifyPhone(phoneCode.trim());
       await navigate({ to: "/profile", replace: true });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Phone verification failed.");
+      setError(phoneVerificationError(reason, "Phone verification failed."));
     } finally {
       setVerifying(false);
     }

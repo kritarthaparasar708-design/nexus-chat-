@@ -1865,3 +1865,342 @@ mark {
     animation: none;
   }
 }
+
+/* Signup shares the login page's foundation while keeping its own account-creation artwork. */
+.nexus-signup-card {
+  min-height: min(49rem, calc(100dvh - 5rem));
+}
+.nexus-signup-form-panel {
+  padding-block: clamp(2rem, 4vh, 3.5rem);
+}
+.nexus-signup-intro {
+  margin-top: clamp(1.65rem, 4vh, 2.7rem);
+}
+.nexus-signup-form {
+  gap: 0.82rem;
+  margin-top: 1.5rem;
+}
+.nexus-signup-form .nexus-login-field {
+  gap: 0.36rem;
+}
+.nexus-signup-field-help {
+  margin-top: 0.05rem;
+  color: #9a94a8;
+  font-size: 0.59rem;
+  line-height: 1.45;
+}
+.nexus-signup-submit {
+  margin-top: 0.25rem;
+}
+.nexus-signup-promo {
+  background:
+    radial-gradient(26rem 23rem at 52% 46%, rgb(124 58 237 / 17%), transparent 72%),
+    linear-gradient(155deg, #171428 0%, #11101d 58%, #0e0d18 100%);
+}
+.nexus-signup-promo-copy h2 {
+  max-width: 18rem;
+}
+.nexus-signup-artwork {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: 18.5rem;
+  flex: 1;
+  align-content: center;
+  justify-items: center;
+  margin: 0.45rem -0.3rem 0;
+  isolation: isolate;
+}
+.nexus-signup-network-orbit {
+  position: absolute;
+  top: 51%;
+  left: 50%;
+  width: 15.5rem;
+  height: 15.5rem;
+  border: 1px dashed rgb(192 132 252 / 17%);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.nexus-signup-network-orbit-one {
+  box-shadow: 0 0 0 2rem rgb(168 85 247 / 2.5%), 0 0 70px rgb(139 92 246 / 10%);
+}
+.nexus-signup-network-orbit-two {
+  width: 20rem;
+  height: 20rem;
+  border-style: solid;
+  border-color: rgb(192 132 252 / 7%);
+}
+.nexus-signup-contact-card {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  width: min(15.3rem, 72%);
+  align-items: center;
+  gap: 0.62rem;
+  border: 1px solid rgb(216 180 254 / 17%);
+  border-radius: 0.9rem;
+  background: linear-gradient(145deg, rgb(34 30 53 / 96%), rgb(20 18 33 / 96%));
+  padding: 0.68rem 0.72rem;
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 95%), 0 0 30px -21px rgb(168 85 247 / 80%);
+  backdrop-filter: blur(12px);
+}
+.nexus-signup-contact-one {
+  top: 13%;
+  left: 1%;
+  transform: rotate(-4deg);
+  animation: nexus-signup-float-one 7.5s ease-in-out infinite;
+}
+.nexus-signup-contact-two {
+  right: 0;
+  bottom: 13%;
+  transform: rotate(3deg);
+  animation: nexus-signup-float-two 8.5s ease-in-out infinite;
+}
+.nexus-signup-avatar {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 21%);
+  border-radius: 50%;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 5px 17px rgb(124 58 237 / 25%);
+}
+.nexus-signup-avatar-violet {
+  background: linear-gradient(145deg, #a66ee8, #6650a7 76%);
+}
+.nexus-signup-avatar-blue {
+  background: linear-gradient(145deg, #6e9de1, #59548e 78%);
+}
+.nexus-signup-contact-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+.nexus-signup-contact-copy strong {
+  overflow: hidden;
+  color: #f3efff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nexus-signup-contact-copy small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  overflow: hidden;
+  color: #a8a2b7;
+  font-size: 0.53rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nexus-signup-contact-copy small i {
+  width: 0.34rem;
+  height: 0.34rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #56d6a1;
+  box-shadow: 0 0 9px rgb(86 214 161 / 62%);
+}
+.nexus-signup-contact-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #c4a2ff;
+}
+.nexus-signup-unread {
+  display: grid;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: #fff;
+  font-size: 0.53rem;
+  font-weight: 700;
+  box-shadow: 0 0 14px rgb(168 85 247 / 48%);
+}
+.nexus-signup-connected {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  width: max-content;
+  max-width: 90%;
+  border: 1px solid rgb(216 180 254 / 20%);
+  border-radius: 0.85rem;
+  background: rgb(27 24 43 / 94%);
+  padding: 0.58rem 0.76rem;
+  box-shadow: 0 18px 40px -25px rgb(0 0 0 / 95%), 0 0 32px -20px rgb(168 85 247 / 70%);
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(14px);
+}
+.nexus-signup-connected-icon {
+  display: grid;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(167 139 250 / 25%);
+  border-radius: 0.62rem;
+  background: rgb(139 92 246 / 17%);
+  color: #c4a2ff;
+}
+.nexus-signup-connected > span:last-child {
+  display: grid;
+  gap: 0.16rem;
+}
+.nexus-signup-connected strong {
+  color: #f1edfa;
+  font-size: 0.6rem;
+  font-weight: 600;
+}
+.nexus-signup-connected small {
+  color: #9a94a8;
+  font-size: 0.49rem;
+}
+.nexus-signup-message-float {
+  position: absolute;
+  z-index: 4;
+  bottom: 3%;
+  left: 4%;
+  display: flex;
+  align-items: center;
+  gap: 0.46rem;
+  border: 1px solid rgb(216 180 254 / 14%);
+  border-radius: 0.72rem;
+  background: rgb(25 22 39 / 93%);
+  padding: 0.48rem 0.62rem;
+  color: #d8d2e4;
+  font-size: 0.53rem;
+  box-shadow: 0 14px 32px -24px rgb(0 0 0 / 95%);
+  backdrop-filter: blur(12px);
+}
+.nexus-signup-message-mark {
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.48rem;
+  background: rgb(168 85 247 / 17%);
+  color: #c4a2ff;
+}
+.nexus-signup-features {
+  margin-top: 0.4rem;
+}
+.nexus-signup-features > div {
+  padding-block: 0.54rem;
+}
+@keyframes nexus-signup-float-one {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50% { transform: rotate(-2.5deg) translateY(-4px); }
+}
+@keyframes nexus-signup-float-two {
+  0%, 100% { transform: rotate(3deg) translateY(0); }
+  50% { transform: rotate(1.5deg) translateY(4px); }
+}
+@media (max-width: 1024px) {
+  .nexus-signup-form-panel {
+    padding-inline: clamp(1.55rem, 3.5vw, 2.6rem);
+  }
+  .nexus-signup-promo {
+    padding-inline: 1.4rem;
+  }
+  .nexus-signup-artwork {
+    min-height: 17rem;
+  }
+}
+@media (max-width: 900px) and (min-width: 761px) {
+  .nexus-signup-intro h1 {
+    font-size: clamp(1.9rem, 3vw, 2.25rem);
+  }
+  .nexus-signup-promo-copy h2 {
+    font-size: 1.55rem;
+  }
+  .nexus-signup-contact-card {
+    width: min(14rem, 79%);
+  }
+}
+@media (max-width: 760px) {
+  .nexus-signup-card {
+    min-height: 0;
+  }
+  .nexus-signup-form-panel {
+    padding-block: clamp(1.5rem, 6vw, 2.25rem);
+  }
+  .nexus-signup-intro {
+    margin-top: 1.85rem;
+  }
+  .nexus-signup-promo {
+    min-height: 0;
+    padding-top: 1.65rem;
+  }
+  .nexus-signup-artwork {
+    min-height: 15rem;
+    margin-top: 0.2rem;
+  }
+  .nexus-signup-network-orbit {
+    width: 14rem;
+    height: 14rem;
+  }
+  .nexus-signup-network-orbit-two {
+    width: 18rem;
+    height: 18rem;
+  }
+}
+@media (max-width: 420px) {
+  .nexus-signup-form-panel {
+    padding: 1.35rem 1.15rem 1.5rem;
+  }
+  .nexus-signup-form {
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+  .nexus-signup-promo {
+    padding-inline: 1.15rem;
+  }
+  .nexus-signup-contact-card {
+    width: min(14rem, 83%);
+    gap: 0.48rem;
+    padding-inline: 0.55rem;
+  }
+  .nexus-signup-message-float {
+    left: 0;
+  }
+}
+@media (max-height: 820px) and (min-width: 761px) {
+  .nexus-signup-card {
+    min-height: 0;
+  }
+  .nexus-signup-form-panel {
+    align-self: start;
+    padding-block: 1.8rem;
+  }
+  .nexus-signup-intro {
+    margin-top: 1.5rem;
+  }
+  .nexus-signup-artwork {
+    min-height: 15rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-signup-card,
+  .nexus-signup-contact-card,
+  .nexus-signup-submit {
+    animation: none;
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

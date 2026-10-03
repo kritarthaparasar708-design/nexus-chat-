@@ -1,5 +1,21 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Hexagon, LoaderCircle, LockKeyhole, Mail, Phone, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Globe2,
+  Hexagon,
+  LoaderCircle,
+  LockKeyhole,
+  Mail,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+  Zap,
+} from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { BrandMark } from "./primitives";
 import { useNexus } from "./state";
@@ -63,6 +79,7 @@ export function LoginView() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -73,42 +90,337 @@ export function LoginView() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-    if (!authConfigured) return setError("Supabase is not configured yet. Add your project URL and anon key, then reload.");
+    const cleanIdentifier = identifier.trim();
+    const compactPhone = cleanIdentifier.replace(/[\s().-]/g, "");
+    const isPhone = /^\+[1-9]\d{7,14}$/.test(compactPhone);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanIdentifier);
+    if (!isEmail && !isPhone) {
+      setError(
+        "Enter a valid email address or phone number with its country code (for example, +14155550123).",
+      );
+      return;
+    }
+    if (password.length === 0) {
+      setError("Enter your password.");
+      return;
+    }
+    if (!authConfigured) {
+      setError(
+        "Supabase configuration is missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+      );
+      return;
+    }
     setBusy(true);
     try {
-      await actions.signIn(identifier, password);
+      await actions.signIn(cleanIdentifier, password);
       await navigate({ to: "/messages", replace: true });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to sign in. Please try again.");
+      const message = reason instanceof Error ? reason.message.toLowerCase() : "";
+      if (message.includes("email not confirmed")) {
+        setError("Please verify your email before logging in.");
+      } else if (message.includes("phone not confirmed")) {
+        setError("Please verify your phone number before logging in.");
+      } else if (
+        message.includes("invalid login credentials") ||
+        message.includes("invalid credentials") ||
+        message.includes("user not found")
+      ) {
+        setError(
+          "Your email or phone number and password don't match. Check your details or create an account.",
+        );
+      } else if (
+        message.includes("failed to fetch") ||
+        message.includes("network") ||
+        message.includes("fetch")
+      ) {
+        setError(
+          "Unable to connect to the authentication service. Check your connection and try again.",
+        );
+      } else {
+        setError("Unable to log in right now. Please try again.");
+      }
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Sign in to pick up where you left off.">
-      <form className="space-y-4" onSubmit={(event) => void submit(event)}>
-        <label className="nexus-form-label">
-          Email or phone
-          <span className="relative">
-            <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input className="nexus-input pl-10" type="text" autoComplete="username" value={identifier} onChange={(event) => setIdentifier(event.target.value)} placeholder="you@example.com or +14155550123" required />
-          </span>
-        </label>
-        <PasswordField value={password} onChange={setPassword} autoComplete="current-password" />
-        <div className="flex justify-end">
-          <Link to="/reset-password" className="nexus-text-button text-xs">Forgot password?</Link>
-        </div>
-        {error && <AuthNotice error>{error}</AuthNotice>}
-        <button type="submit" className="nexus-primary-button w-full" disabled={busy || authLoading}>
-          {busy ? <LoaderCircle className="size-4 animate-spin" /> : null} Log in <ArrowRight className="size-4" />
-        </button>
-      </form>
-      <p className="mt-5 text-center text-xs text-muted-foreground">Don't have an account? <Link to="/signup" className="nexus-text-button">Create account</Link></p>
-    </AuthLayout>
+    <div className="nexus-auth-page nexus-login-page">
+      <div className="nexus-login-ambient" aria-hidden="true" />
+      <main className="nexus-login-main">
+        <section className="nexus-login-card" aria-label="Log in to Nexus">
+          <div className="nexus-login-form-panel">
+            <Link to="/welcome" className="nexus-login-brand" aria-label="Nexus Chat home">
+              <BrandMark compact />
+              <span className="nexus-login-brand-copy">
+                <strong>Nexus</strong>
+                <small>Chat Beyond Limits</small>
+              </span>
+            </Link>
+
+            <div className="nexus-login-intro">
+              <span className="nexus-login-eyebrow">
+                <Sparkles className="size-3.5" /> YOUR SPACE, YOUR PEOPLE
+              </span>
+              <h1 id="nexus-login-title">
+                Log in to <span>Nexus</span>
+              </h1>
+              <p>
+                Continue your conversations, stay connected
+                <br className="hidden sm:block" /> and never miss a moment.
+              </p>
+            </div>
+
+            <div
+              className="nexus-login-social"
+              role="group"
+              aria-label="Social login options"
+              aria-describedby="nexus-social-status"
+            >
+              <button
+                type="button"
+                className="nexus-login-social-button"
+                disabled
+                title="Google login is not configured yet."
+              >
+                <span className="nexus-google-g" aria-hidden="true">
+                  G
+                </span>
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                className="nexus-login-social-button"
+                disabled
+                title="Apple login is not configured yet."
+              >
+                <span className="nexus-apple-mark" aria-hidden="true">
+                  ●
+                </span>
+                Continue with Apple
+              </button>
+            </div>
+            <p id="nexus-social-status" className="nexus-login-social-note">
+              Google and Apple login are unavailable until their providers are configured in
+              Supabase.
+            </p>
+
+            <div className="nexus-divider nexus-login-divider">
+              <span>OR CONTINUE WITH EMAIL OR PHONE</span>
+            </div>
+
+            <form
+              className="nexus-login-form"
+              onSubmit={(event) => void submit(event)}
+              aria-labelledby="nexus-login-title"
+              noValidate
+            >
+              <div className="nexus-login-field">
+                <label htmlFor="nexus-login-identifier">Email or Phone number</label>
+                <span className="nexus-login-input-wrap">
+                  <Mail className="nexus-login-input-icon" aria-hidden="true" />
+                  <input
+                    id="nexus-login-identifier"
+                    className="nexus-login-input"
+                    type="text"
+                    inputMode="text"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    value={identifier}
+                    onChange={(event) => setIdentifier(event.target.value)}
+                    placeholder="Enter your email or phone number"
+                    aria-describedby={error ? "nexus-login-error" : undefined}
+                    required
+                  />
+                </span>
+              </div>
+
+              <div className="nexus-login-field">
+                <label htmlFor="nexus-login-password">Password</label>
+                <span className="nexus-login-input-wrap">
+                  <LockKeyhole className="nexus-login-input-icon" aria-hidden="true" />
+                  <input
+                    id="nexus-login-password"
+                    className="nexus-login-input nexus-login-password-input"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Enter your password"
+                    aria-describedby={error ? "nexus-login-error" : undefined}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="nexus-password-toggle"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </span>
+              </div>
+
+              <div className="nexus-login-forgot-row">
+                <Link to="/reset-password" className="nexus-login-link">
+                  Forgot password?
+                </Link>
+              </div>
+
+              {error && (
+                <p id="nexus-login-error" className="nexus-login-error" role="alert">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="nexus-login-submit"
+                disabled={busy || authLoading}
+                aria-busy={busy}
+              >
+                <span>{busy ? "Logging in..." : "Log in"}</span>
+                {busy ? (
+                  <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                )}
+              </button>
+            </form>
+
+            <p className="nexus-login-signup">
+              Don't have an account?{" "}
+              <Link to="/signup" className="nexus-login-link">
+                Create one
+              </Link>
+            </p>
+          </div>
+
+          <aside className="nexus-login-promo" aria-labelledby="nexus-login-promo-title">
+            <div className="nexus-login-promo-copy">
+              <span className="nexus-login-promo-kicker">
+                <span className="nexus-live-dot" /> THE CONVERSATION, REIMAGINED
+              </span>
+              <h2 id="nexus-login-promo-title">More Than Just Chat</h2>
+              <p>
+                Fast. Private. Real-time.
+                <br />
+                <strong>That's Nexus.</strong>
+              </p>
+            </div>
+
+            <div
+              className="nexus-login-artwork"
+              role="img"
+              aria-label="Decorative demo conversation with fictional participants, not connected to a real account"
+            >
+              <div className="nexus-login-art-orbit nexus-login-art-orbit-one" />
+              <div className="nexus-login-art-orbit nexus-login-art-orbit-two" />
+              <div className="nexus-login-float-chip">
+                <span className="nexus-login-float-icon">
+                  <MessageCircle className="size-4" />
+                </span>
+                <span>
+                  <strong>Moments, together</strong>
+                  <small>Even miles apart</small>
+                </span>
+                <span className="nexus-login-float-spark">✦</span>
+              </div>
+              <div className="nexus-login-chat-preview" aria-hidden="true">
+                <div className="nexus-login-chat-header">
+                  <span className="nexus-login-demo-avatar">K</span>
+                  <span className="nexus-login-demo-profile">
+                    <strong>Kryt</strong>
+                    <small>
+                      <i /> Online
+                    </small>
+                  </span>
+                  <span className="nexus-login-chat-menu">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+                <div className="nexus-login-chat-messages">
+                  <div className="nexus-login-demo-message">
+                    <span>Hey! Are you free now?</span>
+                    <time>10:42</time>
+                  </div>
+                  <div className="nexus-login-demo-message nexus-login-demo-message-out">
+                    <span>Yeah, let's talk! 🚀</span>
+                    <time>
+                      10:42 <b>✓✓</b>
+                    </time>
+                  </div>
+                  <div className="nexus-login-demo-typing">
+                    <i />
+                    <i />
+                    <i />
+                    <span>Kryt is typing</span>
+                  </div>
+                </div>
+                <div className="nexus-login-chat-compose">
+                  <span>Write a message...</span>
+                  <span className="nexus-login-compose-send">
+                    <ArrowRight className="size-3.5" />
+                  </span>
+                </div>
+              </div>
+              <div className="nexus-login-art-caption">
+                <span className="nexus-login-caption-signal">
+                  <i />
+                  <i />
+                  <i />
+                </span>{" "}
+                A little closer, wherever you are
+              </div>
+            </div>
+
+            <div className="nexus-login-features" aria-label="Nexus features">
+              <div>
+                <Zap aria-hidden="true" />
+                <span>
+                  <strong>Real-time</strong>
+                  <small>Messaging</small>
+                </span>
+              </div>
+              <div>
+                <ShieldCheck aria-hidden="true" />
+                <span>
+                  <strong>Privacy</strong>
+                  <small>Protected</small>
+                </span>
+              </div>
+              <div>
+                <UsersRound aria-hidden="true" />
+                <span>
+                  <strong>Stay Close</strong>
+                  <small>With Friends</small>
+                </span>
+              </div>
+              <div>
+                <Globe2 aria-hidden="true" />
+                <span>
+                  <strong>Available</strong>
+                  <small>Everywhere</small>
+                </span>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+      <footer className="nexus-login-footer">
+        Nexus Chat <span>·</span> Chat Beyond Limits
+      </footer>
+    </div>
   );
 }
-
 export function SignupView() {
   const { actions, authUser, authLoading, authConfigured } = useNexus();
   const navigate = useNavigate();

@@ -95,7 +95,9 @@ export function AppShell({ children, title, subtitle }: { children: ReactNode; t
 
   if (!authConfigured) {
     return (
-      <AppLoading message="Connect Supabase by adding VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment, then reload." />
+      <AppLoading
+        message="Supabase configuration is missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then reload."
+      />
     );
   }
   if (authLoading || (authUser && profileLoading)) return <AppLoading message="Restoring your Nexus Chat session…" />;

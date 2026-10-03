@@ -985,3 +985,883 @@ mark {
     opacity: 1;
   }
 }
+
+/* Login page: isolated styles so the signup, reset, and authenticated app retain their existing layouts. */
+.nexus-login-page {
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(50rem 34rem at 12% 8%, rgb(124 58 237 / 10%), transparent 68%),
+    radial-gradient(48rem 36rem at 94% 95%, rgb(139 92 246 / 9%), transparent 70%),
+    #080812;
+  color: #f7f5ff;
+}
+.nexus-login-ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.nexus-login-ambient::before,
+.nexus-login-ambient::after {
+  position: absolute;
+  width: 32rem;
+  height: 32rem;
+  border: 1px solid rgb(168 85 247 / 7%);
+  border-radius: 50%;
+  content: "";
+}
+.nexus-login-ambient::before {
+  top: -21rem;
+  left: 30%;
+  box-shadow: 0 0 0 3rem rgb(168 85 247 / 2%), 0 0 0 7rem rgb(168 85 247 / 1.5%);
+}
+.nexus-login-ambient::after {
+  right: -26rem;
+  bottom: -23rem;
+  width: 42rem;
+  height: 42rem;
+  box-shadow: 0 0 0 4rem rgb(124 58 237 / 2%), 0 0 100px rgb(124 58 237 / 10%);
+}
+.nexus-login-main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: 1;
+  width: 100%;
+  place-items: center;
+  padding: clamp(1.25rem, 3.5vh, 2.75rem) clamp(1rem, 4vw, 3.5rem);
+}
+.nexus-login-card {
+  display: grid;
+  width: min(100%, 73rem);
+  min-height: min(47rem, calc(100dvh - 5rem));
+  grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+  overflow: hidden;
+  border: 1px solid rgb(196 181 253 / 14%);
+  border-radius: 1.8rem;
+  background: linear-gradient(135deg, rgb(19 18 32 / 98%), rgb(13 12 23 / 98%));
+  box-shadow: 0 40px 120px -48px rgb(0 0 0 / 95%), 0 0 70px -46px rgb(168 85 247 / 50%);
+  animation: nexus-login-enter 650ms cubic-bezier(0.2, 0.75, 0.3, 1) both;
+}
+.nexus-login-form-panel {
+  min-width: 0;
+  align-self: center;
+  padding: clamp(2.25rem, 5vw, 4.5rem) clamp(2rem, 5.2vw, 4.75rem);
+}
+.nexus-login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fff;
+  text-decoration: none;
+}
+.nexus-login-brand .nexus-mark {
+  display: grid;
+  width: 2.9rem;
+  height: 2.9rem;
+  place-items: center;
+  border: 1px solid rgb(196 181 253 / 23%);
+  border-radius: 0.95rem;
+  background: linear-gradient(145deg, rgb(168 85 247 / 22%), rgb(124 58 237 / 9%));
+  color: #c4a2ff;
+  box-shadow: 0 0 30px -12px rgb(168 85 247 / 60%);
+}
+.nexus-login-brand .nexus-mark svg {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+.nexus-login-brand-copy {
+  display: grid;
+  gap: 0.12rem;
+}
+.nexus-login-brand-copy strong {
+  font-family: var(--font-display);
+  font-size: 1.13rem;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+.nexus-login-brand-copy small {
+  color: #9993ad;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+}
+.nexus-login-intro {
+  margin-top: clamp(2rem, 5vh, 3.6rem);
+}
+.nexus-login-eyebrow,
+.nexus-login-promo-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.48rem;
+  color: #bba4ef;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.nexus-login-eyebrow svg {
+  color: #c084fc;
+}
+.nexus-login-intro h1 {
+  margin: 0.8rem 0 0;
+  color: #faf9ff;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.2vw, 2.7rem);
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  line-height: 1.12;
+}
+.nexus-login-intro h1 span {
+  background: linear-gradient(100deg, #c084fc 10%, #a78bfa 65%, #8b5cf6);
+  background-clip: text;
+  color: transparent;
+}
+.nexus-login-intro > p {
+  margin: 0.85rem 0 0;
+  color: #aaa5b8;
+  font-size: 0.86rem;
+  line-height: 1.75;
+}
+.nexus-login-social {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-top: 1.75rem;
+}
+.nexus-login-social-button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.52rem;
+  border: 1px solid rgb(196 181 253 / 13%);
+  border-radius: 0.78rem;
+  background: rgb(255 255 255 / 2.5%);
+  color: #cbc7d7;
+  font-size: 0.69rem;
+  font-weight: 600;
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+.nexus-google-g {
+  font-family: Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  background: conic-gradient(from -40deg, #4285f4 0 27%, #34a853 27% 48%, #fbbc05 48% 68%, #ea4335 68% 84%, #4285f4 84%);
+  background-clip: text;
+  color: transparent;
+}
+.nexus-apple-mark {
+  position: relative;
+  display: inline-grid;
+  width: 0.9rem;
+  height: 0.9rem;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 45% 42% 48% 48%;
+  background: #d8d5e2;
+  color: transparent;
+  font-size: 0;
+}
+.nexus-apple-mark::before {
+  position: absolute;
+  top: -0.23rem;
+  right: 0.15rem;
+  width: 0.32rem;
+  height: 0.22rem;
+  border-radius: 90% 0 90% 0;
+  background: #d8d5e2;
+  content: "";
+  transform: rotate(-35deg);
+}
+.nexus-login-social-note {
+  margin: 0.55rem 0 0;
+  color: #938da1;
+  font-size: 0.62rem;
+  line-height: 1.45;
+  text-align: center;
+}
+.nexus-login-divider {
+  gap: 0.7rem;
+  margin: 1.3rem 0 1.15rem;
+  color: #898496;
+  font-size: 0.57rem;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+.nexus-login-divider::before,
+.nexus-login-divider::after {
+  background: rgb(196 181 253 / 12%);
+}
+.nexus-login-form {
+  display: grid;
+  gap: 1rem;
+}
+.nexus-login-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.47rem;
+}
+.nexus-login-field > label {
+  color: #e7e3ef;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.nexus-login-input-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+.nexus-login-input-icon {
+  position: absolute;
+  left: 0.9rem;
+  width: 1rem;
+  height: 1rem;
+  color: #777187;
+  pointer-events: none;
+  transition: color 160ms ease;
+}
+.nexus-login-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 3.15rem;
+  border: 1px solid rgb(196 181 253 / 13%);
+  border-radius: 0.8rem;
+  outline: none;
+  background: linear-gradient(110deg, rgb(255 255 255 / 3%), rgb(255 255 255 / 1.5%));
+  padding: 0.82rem 0.9rem 0.82rem 2.75rem;
+  color: #f7f5ff;
+  font-family: var(--font-sans);
+  font-size: 0.76rem;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+.nexus-login-input::placeholder {
+  color: #898496;
+  opacity: 1;
+}
+.nexus-login-input:hover {
+  border-color: rgb(196 181 253 / 24%);
+}
+.nexus-login-input:focus {
+  border-color: rgb(168 85 247 / 75%);
+  background: rgb(168 85 247 / 4%);
+  box-shadow: 0 0 0 3px rgb(139 92 246 / 16%), 0 0 26px -17px rgb(168 85 247 / 62%);
+}
+.nexus-login-input-wrap:focus-within .nexus-login-input-icon {
+  color: #b68af5;
+}
+.nexus-login-password-input {
+  padding-right: 3rem;
+}
+.nexus-password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 0;
+  border-radius: 0.55rem;
+  background: transparent;
+  color: #9690a4;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+.nexus-password-toggle:hover {
+  background: rgb(255 255 255 / 5%);
+  color: #d5c8ef;
+}
+.nexus-password-toggle:focus-visible,
+.nexus-login-link:focus-visible,
+.nexus-login-submit:focus-visible {
+  outline: 2px solid #c084fc;
+  outline-offset: 3px;
+}
+.nexus-login-forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.35rem;
+}
+.nexus-login-link {
+  color: #bd9af1;
+  font-size: 0.71rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+.nexus-login-link:hover {
+  color: #e1ceff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nexus-login-error {
+  margin: -0.15rem 0 0;
+  border: 1px solid rgb(248 113 113 / 24%);
+  border-radius: 0.7rem;
+  background: rgb(127 29 29 / 17%);
+  padding: 0.65rem 0.75rem;
+  color: #fca5a5;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+.nexus-login-submit {
+  display: flex;
+  width: 100%;
+  min-height: 3.2rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.15rem;
+  border: 1px solid rgb(192 132 252 / 48%);
+  border-radius: 0.82rem;
+  background: linear-gradient(105deg, #7c3aed 0%, #9333ea 54%, #7c3aed 100%);
+  background-size: 180% 100%;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 10px 28px -13px rgb(168 85 247 / 85%), inset 0 1px rgb(255 255 255 / 16%);
+  cursor: pointer;
+  transition: transform 170ms ease, filter 170ms ease, box-shadow 170ms ease, background-position 300ms ease;
+}
+.nexus-login-submit:hover:not(:disabled) {
+  background-position: 100% 0;
+  filter: brightness(1.12);
+  box-shadow: 0 14px 34px -13px rgb(168 85 247 / 92%), inset 0 1px rgb(255 255 255 / 18%);
+  transform: translateY(-1px);
+}
+.nexus-login-submit:active:not(:disabled) {
+  filter: brightness(0.96);
+  transform: translateY(0) scale(0.995);
+}
+.nexus-login-submit:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+.nexus-login-signup {
+  margin: 1.35rem 0 0;
+  color: #9590a2;
+  font-size: 0.72rem;
+  text-align: center;
+}
+.nexus-login-signup .nexus-login-link {
+  margin-left: 0.25rem;
+}
+.nexus-login-promo {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border-left: 1px solid rgb(196 181 253 / 10%);
+  background:
+    radial-gradient(26rem 23rem at 52% 45%, rgb(124 58 237 / 16%), transparent 72%),
+    linear-gradient(155deg, #171428 0%, #11101d 58%, #0e0d18 100%);
+  padding: clamp(2.25rem, 4vw, 3.6rem) clamp(1.8rem, 4.1vw, 3.5rem) 2.2rem;
+}
+.nexus-login-promo::before {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgb(255 255 255 / 2.2%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 2.2%) 1px, transparent 1px);
+  background-size: 30px 30px;
+  content: "";
+  mask-image: linear-gradient(to bottom, black, transparent 82%);
+  pointer-events: none;
+}
+.nexus-login-promo::after {
+  position: absolute;
+  top: 24%;
+  right: -10rem;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 50%;
+  background: rgb(124 58 237 / 8%);
+  content: "";
+  filter: blur(58px);
+  pointer-events: none;
+}
+.nexus-login-promo-copy,
+.nexus-login-artwork,
+.nexus-login-features {
+  position: relative;
+  z-index: 1;
+}
+.nexus-login-promo-kicker {
+  color: #a99bbd;
+  font-size: 0.56rem;
+  letter-spacing: 0.13em;
+}
+.nexus-live-dot,
+.nexus-login-demo-profile i {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: #9b7cf2;
+  box-shadow: 0 0 12px rgb(167 139 250 / 75%);
+}
+.nexus-login-promo-copy h2 {
+  margin: 1.1rem 0 0;
+  color: #f8f6ff;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2.45vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 1.15;
+}
+.nexus-login-promo-copy p {
+  margin: 0.65rem 0 0;
+  color: #aaa4b8;
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+.nexus-login-promo-copy p strong {
+  color: #d8c8f8;
+  font-weight: 600;
+}
+.nexus-login-artwork {
+  display: grid;
+  min-height: 19rem;
+  flex: 1;
+  align-content: center;
+  justify-items: center;
+  margin: 0.65rem -0.3rem 0;
+  isolation: isolate;
+}
+.nexus-login-art-orbit {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 18rem;
+  height: 18rem;
+  border: 1px solid rgb(192 132 252 / 10%);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+.nexus-login-art-orbit-one {
+  box-shadow: 0 0 0 2.3rem rgb(168 85 247 / 2.5%), 0 0 70px rgb(139 92 246 / 9%);
+}
+.nexus-login-art-orbit-two {
+  width: 22rem;
+  height: 22rem;
+  border-color: rgb(192 132 252 / 6%);
+}
+.nexus-login-chat-preview {
+  position: relative;
+  z-index: 2;
+  width: min(92%, 21rem);
+  overflow: hidden;
+  border: 1px solid rgb(216 180 254 / 19%);
+  border-radius: 1.15rem;
+  background: linear-gradient(145deg, rgb(32 28 51 / 96%), rgb(18 17 30 / 97%));
+  box-shadow: 0 28px 70px -25px rgb(0 0 0 / 90%), 0 0 35px -20px rgb(168 85 247 / 66%);
+  transform: rotate(-2deg);
+  animation: nexus-login-float 7s ease-in-out infinite;
+}
+.nexus-login-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-bottom: 1px solid rgb(216 180 254 / 10%);
+  background: rgb(255 255 255 / 2%);
+  padding: 0.82rem 0.95rem;
+}
+.nexus-login-demo-avatar {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #9565d6, #485e92 80%);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgb(124 58 237 / 28%);
+}
+.nexus-login-demo-profile {
+  display: grid;
+  gap: 0.2rem;
+}
+.nexus-login-demo-profile strong {
+  color: #f3efff;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.nexus-login-demo-profile small {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  color: #a8a2b7;
+  font-size: 0.58rem;
+}
+.nexus-login-demo-profile i {
+  width: 0.33rem;
+  height: 0.33rem;
+  background: #56d6a1;
+  box-shadow: 0 0 9px rgb(86 214 161 / 62%);
+}
+.nexus-login-chat-menu {
+  display: flex;
+  gap: 0.19rem;
+  margin-left: auto;
+}
+.nexus-login-chat-menu i {
+  width: 0.2rem;
+  height: 0.2rem;
+  border-radius: 50%;
+  background: #777187;
+}
+.nexus-login-chat-messages {
+  display: grid;
+  gap: 0.72rem;
+  padding: 1.05rem 0.9rem 0.75rem;
+}
+.nexus-login-demo-message {
+  display: grid;
+  width: fit-content;
+  max-width: 88%;
+  gap: 0.3rem;
+  border: 1px solid rgb(216 180 254 / 8%);
+  border-radius: 0.8rem 0.8rem 0.8rem 0.25rem;
+  background: rgb(255 255 255 / 4%);
+  padding: 0.56rem 0.68rem;
+  color: #dfdbe9;
+  font-size: 0.65rem;
+}
+.nexus-login-demo-message time {
+  justify-self: end;
+  color: #888195;
+  font-size: 0.48rem;
+}
+.nexus-login-demo-message-out {
+  justify-self: end;
+  border-color: rgb(192 132 252 / 17%);
+  border-radius: 0.8rem 0.8rem 0.25rem 0.8rem;
+  background: linear-gradient(120deg, rgb(124 58 237 / 43%), rgb(147 51 234 / 26%));
+  color: #fbf9ff;
+}
+.nexus-login-demo-message time b {
+  color: #c4a2ff;
+  font-weight: 700;
+}
+.nexus-login-demo-typing {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding-left: 0.22rem;
+  color: #938ba1;
+  font-size: 0.52rem;
+}
+.nexus-login-demo-typing i {
+  width: 0.19rem;
+  height: 0.19rem;
+  border-radius: 50%;
+  background: #b69ae5;
+  animation: nexus-login-typing 1.2s ease-in-out infinite;
+}
+.nexus-login-demo-typing i:nth-child(2) {
+  animation-delay: 140ms;
+}
+.nexus-login-demo-typing i:nth-child(3) {
+  margin-right: 0.25rem;
+  animation-delay: 280ms;
+}
+.nexus-login-chat-compose {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0.78rem 0.8rem;
+  border: 1px solid rgb(216 180 254 / 10%);
+  border-radius: 0.62rem;
+  background: rgb(7 7 15 / 45%);
+  padding: 0.38rem 0.43rem 0.38rem 0.65rem;
+  color: #777187;
+  font-size: 0.55rem;
+}
+.nexus-login-compose-send {
+  display: grid;
+  width: 1.45rem;
+  height: 1.45rem;
+  place-items: center;
+  border-radius: 0.42rem;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: #fff;
+}
+.nexus-login-float-chip {
+  position: absolute;
+  z-index: 3;
+  top: 14%;
+  right: -0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgb(216 180 254 / 15%);
+  border-radius: 0.82rem;
+  background: rgb(26 23 41 / 90%);
+  padding: 0.55rem 0.65rem;
+  box-shadow: 0 15px 35px -20px rgb(0 0 0 / 95%);
+  backdrop-filter: blur(12px);
+}
+.nexus-login-float-icon {
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border-radius: 0.58rem;
+  background: rgb(168 85 247 / 18%);
+  color: #c4a2ff;
+}
+.nexus-login-float-chip > span:nth-child(2) {
+  display: grid;
+  gap: 0.18rem;
+}
+.nexus-login-float-chip strong {
+  color: #e9e3f5;
+  font-size: 0.56rem;
+  font-weight: 600;
+}
+.nexus-login-float-chip small {
+  color: #938ba1;
+  font-size: 0.48rem;
+}
+.nexus-login-float-spark {
+  align-self: flex-start;
+  color: #c4a2ff;
+  font-size: 0.7rem;
+}
+.nexus-login-art-caption {
+  position: absolute;
+  z-index: 2;
+  bottom: 4%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #aaa3b8;
+  font-size: 0.62rem;
+  letter-spacing: 0.015em;
+}
+.nexus-login-caption-signal {
+  display: inline-flex;
+  align-items: end;
+  gap: 0.13rem;
+  height: 0.8rem;
+}
+.nexus-login-caption-signal i {
+  width: 0.13rem;
+  border-radius: 1rem;
+  background: #a78bfa;
+}
+.nexus-login-caption-signal i:nth-child(1) { height: 0.36rem; opacity: 0.6; }
+.nexus-login-caption-signal i:nth-child(2) { height: 0.58rem; opacity: 0.78; }
+.nexus-login-caption-signal i:nth-child(3) { height: 0.8rem; }
+.nexus-login-features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.72rem;
+  border-top: 1px solid rgb(216 180 254 / 10%);
+  padding-top: 1.05rem;
+}
+.nexus-login-features > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgb(216 180 254 / 7%);
+  border-radius: 0.7rem;
+  background: rgb(255 255 255 / 2%);
+  padding: 0.58rem 0.62rem;
+}
+.nexus-login-features > div > svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  color: #b99aef;
+  stroke-width: 1.7;
+}
+.nexus-login-features span {
+  display: grid;
+  min-width: 0;
+  gap: 0.14rem;
+}
+.nexus-login-features strong {
+  color: #e5e0ee;
+  font-size: 0.58rem;
+  font-weight: 600;
+}
+.nexus-login-features small {
+  overflow: hidden;
+  color: #8e879e;
+  font-size: 0.51rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nexus-login-footer {
+  position: relative;
+  z-index: 1;
+  padding: 0 1rem 1rem;
+  color: #898496;
+  font-size: 0.6rem;
+  letter-spacing: 0.025em;
+  text-align: center;
+}
+.nexus-login-footer span {
+  margin: 0 0.3rem;
+  color: #9e82d0;
+}
+@keyframes nexus-login-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes nexus-login-float {
+  0%, 100% { transform: rotate(-2deg) translateY(0); }
+  50% { transform: rotate(-1deg) translateY(-5px); }
+}
+@keyframes nexus-login-typing {
+  0%, 60%, 100% { opacity: 0.45; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+
+@media (max-width: 1024px) {
+  .nexus-login-card {
+    grid-template-columns: minmax(0, 1.08fr) minmax(18rem, 0.92fr);
+  }
+  .nexus-login-form-panel {
+    padding-inline: clamp(1.8rem, 4vw, 3rem);
+  }
+  .nexus-login-promo {
+    padding-inline: 1.75rem;
+  }
+  .nexus-login-float-chip {
+    right: -0.35rem;
+  }
+}
+@media (max-width: 760px) {
+  .nexus-login-page {
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .nexus-login-main {
+    align-items: start;
+    padding: 1rem 0.85rem 0.75rem;
+  }
+  .nexus-login-card {
+    width: min(100%, 34rem);
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 1.35rem;
+  }
+  .nexus-login-form-panel {
+    padding: clamp(1.5rem, 6vw, 2.25rem);
+  }
+  .nexus-login-intro {
+    margin-top: 1.85rem;
+  }
+  .nexus-login-intro h1 {
+    font-size: clamp(2rem, 8vw, 2.55rem);
+  }
+  .nexus-login-promo {
+    min-height: 0;
+    border-top: 1px solid rgb(196 181 253 / 10%);
+    border-left: 0;
+    padding: 1.65rem clamp(1.5rem, 6vw, 2.25rem) 1.35rem;
+  }
+  .nexus-login-promo-copy h2 {
+    margin-top: 0.7rem;
+    font-size: 1.55rem;
+  }
+  .nexus-login-promo-copy p {
+    margin-top: 0.35rem;
+  }
+  .nexus-login-artwork {
+    min-height: 15.5rem;
+    margin-top: 0.15rem;
+  }
+  .nexus-login-chat-preview {
+    width: min(88%, 20rem);
+  }
+  .nexus-login-art-orbit {
+    width: 15rem;
+    height: 15rem;
+  }
+  .nexus-login-art-orbit-two {
+    width: 18rem;
+    height: 18rem;
+  }
+  .nexus-login-float-chip {
+    top: 9%;
+    right: 0;
+  }
+  .nexus-login-art-caption {
+    bottom: 1%;
+  }
+  .nexus-login-features {
+    padding-top: 0.85rem;
+  }
+  .nexus-login-footer {
+    padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 420px) {
+  .nexus-login-main {
+    padding-inline: 0.65rem;
+  }
+  .nexus-login-card {
+    border-radius: 1.1rem;
+  }
+  .nexus-login-form-panel {
+    padding: 1.35rem 1.15rem 1.5rem;
+  }
+  .nexus-login-social {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.52rem;
+    margin-top: 1.3rem;
+  }
+  .nexus-login-social-button {
+    min-height: 2.7rem;
+  }
+  .nexus-login-divider {
+    margin-block: 1.05rem 0.95rem;
+    font-size: 0.51rem;
+  }
+  .nexus-login-promo {
+    padding-inline: 1.15rem;
+  }
+  .nexus-login-features {
+    gap: 0.5rem;
+  }
+  .nexus-login-features > div {
+    gap: 0.42rem;
+    padding: 0.5rem 0.48rem;
+  }
+}
+@media (max-height: 820px) and (min-width: 761px) {
+  .nexus-login-main {
+    flex: 0 0 auto;
+    padding-block: 1rem;
+  }
+  .nexus-login-card {
+    min-height: 0;
+  }
+  .nexus-login-form-panel {
+    align-self: start;
+    padding-block: 1.8rem;
+  }
+  .nexus-login-intro {
+    margin-top: 1.5rem;
+  }
+  .nexus-login-artwork {
+    min-height: 15rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-login-card,
+  .nexus-login-chat-preview,
+  .nexus-login-demo-typing i {
+    animation: none;
+  }
+}

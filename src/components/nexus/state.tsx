@@ -72,6 +72,7 @@ type NexusContextValue = {
   authLoading: boolean;
   authConfigured: boolean;
   authError: string | null;
+  signupNeedsEmailConfirmation: boolean;
   profile: Profile | null;
   profileLoading: boolean;
   profileError: string | null;
@@ -149,6 +150,7 @@ export function NexusProvider({ children }: { children: ReactNode }) {
   const [authSession, setAuthSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [signupNeedsEmailConfirmation, setSignupNeedsEmailConfirmation] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -166,6 +168,7 @@ export function NexusProvider({ children }: { children: ReactNode }) {
 
   const applySession = useCallback(async (session: Session | null) => {
     const generation = ++sessionGeneration.current;
+    setSignupNeedsEmailConfirmation(false);
     setAuthSession(session);
     setAuthUser(session?.user ?? null);
     setAuthError(null);
@@ -261,23 +264,39 @@ export function NexusProvider({ children }: { children: ReactNode }) {
     document.documentElement.style.colorScheme = state.settings.theme;
   }, [state.settings.theme]);
 
-  const signUp = useCallback(async (email: string, phone: string, password: string) => {
-    setAuthError(null);
-    const origin = typeof window === "undefined" ? "" : window.location.origin;
-    const { data, error } = await requireSupabase().auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${origin}/verify`,
-        data: { signup_phone: phone },
-      },
-    });
-    if (error) {
-      setAuthError(error.message);
-      throw error;
-    }
-    if (data.session) await applySession(data.session);
-  }, [applySession]);
+  const signUp = useCallback(
+    async (email: string, phone: string, password: string) => {
+      setAuthError(null);
+      setSignupNeedsEmailConfirmation(false);
+      const origin = typeof window === "undefined" ? "" : window.location.origin;
+      const { data, error } = await requireSupabase().auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${origin}/verify`,
+          data: { signup_phone: phone },
+        },
+      });
+      if (error) {
+        setAuthError(error.message);
+        throw error;
+      }
+      if (!data.user) {
+        const missingUserError = new Error(
+          "Supabase did not return a user for this signup request.",
+        );
+        setAuthError(missingUserError.message);
+        throw missingUserError;
+      }
+      if (!data.session) {
+        // Supabase intentionally withholds a session until the email address is confirmed.
+        setSignupNeedsEmailConfirmation(true);
+        return;
+      }
+      await applySession(data.session);
+    },
+    [applySession],
+  );
 
   const signIn = useCallback(async (identifier: string, password: string) => {
     setAuthError(null);
@@ -559,6 +578,7 @@ export function NexusProvider({ children }: { children: ReactNode }) {
     authLoading,
     authConfigured: isSupabaseConfigured,
     authError,
+    signupNeedsEmailConfirmation,
     profile,
     profileLoading,
     profileError,
@@ -570,7 +590,8 @@ export function NexusProvider({ children }: { children: ReactNode }) {
     realtimeStatus,
     passwordRecovery,
   }), [
-    state, actions, authUser, authSession, authLoading, authError, profile, profileLoading,
+    state, actions, authUser, authSession, authLoading, authError,
+    signupNeedsEmailConfirmation, profile, profileLoading,
     profileError, conversationLoading, conversationError, activeConversationId, messagesLoading,
     messageError, realtimeStatus, passwordRecovery,
   ]);

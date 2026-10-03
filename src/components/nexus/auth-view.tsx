@@ -102,6 +102,12 @@ function phoneVerificationError(reason: unknown, fallback: string): string {
     return "Phone number already registered. Log in or use a different number.";
   }
   if (
+    (message.includes("phone") || message.includes("sms")) &&
+    ["not configured", "not enabled", "disabled", "provider"].some((part) => message.includes(part))
+  ) {
+    return "Phone verification is not configured. Ask the administrator to enable Supabase phone authentication and SMS delivery.";
+  }
+  if (
     message.includes("failed to fetch") ||
     message.includes("network") ||
     message.includes("fetch")
@@ -109,6 +115,54 @@ function phoneVerificationError(reason: unknown, fallback: string): string {
     return "Unable to connect to the authentication service. Check your connection and try again.";
   }
   return reason instanceof Error && reason.message ? reason.message : fallback;
+}
+
+function signupErrorMessage(reason: unknown): string {
+  const message = reason instanceof Error ? reason.message : "";
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes("user already registered") ||
+    (normalized.includes("email") &&
+      ["already", "registered", "exists", "taken"].some((part) =>
+        normalized.includes(part),
+      ))
+  ) {
+    return "Email already registered. Log in or use another email address.";
+  }
+  if (normalized.includes("invalid email")) return "Invalid email address.";
+  if (
+    normalized.includes("password") &&
+    ["weak", "too short", "at least", "should be", "minimum"].some((part) =>
+      normalized.includes(part),
+    )
+  ) {
+    return "Password is too weak. Choose a stronger password and try again.";
+  }
+  if (
+    normalized.includes("failed to fetch") ||
+    normalized.includes("network") ||
+    normalized.includes("fetch")
+  ) {
+    return "Unable to connect to the authentication service. Check your connection and try again.";
+  }
+  return message || "Unable to create your account. Please try again.";
+}
+
+function logSafeSignupDiagnostic(reason: unknown) {
+  if (!import.meta.env.DEV) return;
+  const detail =
+    reason && typeof reason === "object" ? (reason as Record<string, unknown>) : {};
+  const code =
+    typeof detail["code"] === "string" &&
+    /^[A-Za-z0-9_-]{1,80}$/.test(detail["code"])
+      ? detail["code"]
+      : undefined;
+  const status = typeof detail["status"] === "number" ? detail["status"] : undefined;
+  console.error("Signup failed:", {
+    name: reason instanceof Error ? reason.name : typeof reason,
+    code,
+    status,
+  });
 }
 
 export function LoginView() {
@@ -523,7 +577,7 @@ export function SignupView() {
     }
     if (!authConfigured) {
       setError(
-        "Unable to connect to the authentication service. Please contact the administrator.",
+        "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for this environment, then reload the app.",
       );
       setErrorField("form");
       return;
@@ -533,36 +587,10 @@ export function SignupView() {
       await actions.signUp(cleanEmail, cleanPhone, password);
       await navigate({ to: "/verify", replace: true });
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message.toLowerCase() : "";
-      if (
-        (message.includes("email") &&
-          (message.includes("already") ||
-            message.includes("registered") ||
-            message.includes("exists"))) ||
-        message.includes("user already registered")
-      ) {
-        setError("Email already registered. Log in or use another email address.");
-      } else if (
-        message.includes("phone") &&
-        (message.includes("already") ||
-          message.includes("registered") ||
-          message.includes("exists"))
-      ) {
-        setError("Phone number already registered. Use another number or log in.");
-      } else if (message.includes("invalid email")) {
-        setError("Invalid email address.");
-        setErrorField("email");
-      } else if (
-        message.includes("failed to fetch") ||
-        message.includes("network") ||
-        message.includes("fetch")
-      ) {
-        setError(
-          "Unable to connect to the authentication service. Check your connection and try again.",
-        );
-      } else {
-        setError("Unable to create your account. Please try again.");
-      }
+      logSafeSignupDiagnostic(reason);
+      const userMessage = signupErrorMessage(reason);
+      setError(userMessage);
+      if (userMessage === "Invalid email address.") setErrorField("email");
       setErrorField((current) => current ?? "form");
     } finally {
       setBusy(false);
@@ -1011,7 +1039,13 @@ export function ResetPasswordView() {
 }
 
 export function VerifyView() {
-  const { actions, authUser, authLoading, authConfigured } = useNexus();
+  const {
+    actions,
+    authUser,
+    authLoading,
+    authConfigured,
+    signupNeedsEmailConfirmation,
+  } = useNexus();
   const navigate = useNavigate();
   const [phoneCode, setPhoneCode] = useState("");
   const [notice, setNotice] = useState("");
@@ -1075,7 +1109,17 @@ export function VerifyView() {
       <AuthLayout title="Verify your email" subtitle="Open the confirmation link sent by Supabase to activate your account." backTo="/signup">
         <div className="space-y-4 text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Mail className="size-5" /></span>
-          <p className="text-sm leading-6 text-muted-foreground">After confirming your email, this page will continue to phone verification. If you already confirmed, open the link again to return here.</p>
+          {signupNeedsEmailConfirmation && !authUser ? (
+            <AuthNotice>
+              Account created. Check your email to verify your account. After confirming, return here
+              to verify your phone and complete your profile.
+            </AuthNotice>
+          ) : (
+            <p className="text-sm leading-6 text-muted-foreground">
+              Check your email for a confirmation link. After confirming it, this page will continue
+              to phone verification. If you already confirmed, open the link again to return here.
+            </p>
+          )}
           {authUser?.email && <AuthNotice>A confirmation email was sent to {authUser.email}.</AuthNotice>}
           <Link to="/login" className="nexus-secondary-button w-full justify-center">Return to log in</Link>
         </div>

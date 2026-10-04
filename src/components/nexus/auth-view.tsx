@@ -20,6 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/lib/supabase";
 import { BrandMark } from "./primitives";
 import { useNexus } from "./state";
 
@@ -165,6 +166,35 @@ function logSafeSignupDiagnostic(reason: unknown) {
   });
 }
 
+function googleOAuthErrorMessage(reason: unknown): string {
+  const message =
+    reason instanceof Error
+      ? reason.message.trim()
+      : typeof reason === "object" &&
+          reason !== null &&
+          "message" in reason &&
+          typeof reason.message === "string"
+        ? reason.message.trim()
+        : "";
+  if (/failed to fetch|network|fetch/i.test(message)) {
+    return "Unable to connect to the authentication service. Check your connection and try again.";
+  }
+  return message || "Unable to continue with Google right now. Please try again.";
+}
+
+async function startGoogleOAuth() {
+  if (!supabase) {
+    throw new Error(
+      "Supabase configuration is missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+    );
+  }
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin },
+  });
+  if (error) throw error;
+}
+
 export function LoginView() {
   const { actions, authUser, authLoading, authConfigured } = useNexus();
   const navigate = useNavigate();
@@ -177,6 +207,24 @@ export function LoginView() {
   useEffect(() => {
     if (!authLoading && authUser) void navigate({ to: "/messages", replace: true });
   }, [authLoading, authUser, navigate]);
+
+  async function continueWithGoogle() {
+    setError("");
+    if (!authConfigured) {
+      setError(
+        "Supabase configuration is missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+      );
+      return;
+    }
+    setBusy(true);
+    try {
+      await startGoogleOAuth();
+    } catch (reason) {
+      setError(googleOAuthErrorMessage(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -271,8 +319,8 @@ export function LoginView() {
               <button
                 type="button"
                 className="nexus-login-social-button"
-                disabled
-                title="Google login is not configured yet."
+                disabled={busy || !authConfigured}
+                onClick={() => void continueWithGoogle()}
               >
                 <span className="nexus-google-g" aria-hidden="true">
                   G
@@ -292,8 +340,7 @@ export function LoginView() {
               </button>
             </div>
             <p id="nexus-social-status" className="nexus-login-social-note">
-              Google and Apple login are unavailable until their providers are configured in
-              Supabase.
+              Apple login is unavailable until its provider is configured in Supabase.
             </p>
 
             <div className="nexus-divider nexus-login-divider">
@@ -535,6 +582,27 @@ export function SignupView() {
     if (!authLoading && authUser) void navigate({ to: "/verify", replace: true });
   }, [authLoading, authUser, navigate]);
 
+  async function continueWithGoogle() {
+    setError("");
+    setErrorField(null);
+    if (!authConfigured) {
+      setError(
+        "Supabase configuration is missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+      );
+      setErrorField("form");
+      return;
+    }
+    setBusy(true);
+    try {
+      await startGoogleOAuth();
+    } catch (reason) {
+      setError(googleOAuthErrorMessage(reason));
+      setErrorField("form");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -634,8 +702,8 @@ export function SignupView() {
               <button
                 type="button"
                 className="nexus-login-social-button"
-                disabled
-                title="Google signup is unavailable until Google is configured in Supabase."
+                disabled={busy || !authConfigured}
+                onClick={() => void continueWithGoogle()}
               >
                 <svg className="nexus-signup-provider-icon" viewBox="0 0 48 48" aria-hidden="true">
                   <path
@@ -677,7 +745,7 @@ export function SignupView() {
               id="nexus-signup-social-status"
               className="nexus-login-social-note nexus-signup-social-status"
             >
-              Google and Apple signup are unavailable until their providers are enabled in Supabase.
+              Apple signup is unavailable until its provider is enabled in Supabase.
             </p>
 
             <div

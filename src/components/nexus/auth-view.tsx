@@ -1116,12 +1116,19 @@ export function VerifyView() {
   } = useNexus();
   const navigate = useNavigate();
   const [phoneCode, setPhoneCode] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneSubmitted, setPhoneSubmitted] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const requested = useRef(false);
-  const phone = typeof authUser?.user_metadata["signup_phone"] === "string" ? authUser.user_metadata["signup_phone"] : "";
+  const signupPhone =
+    typeof authUser?.user_metadata["signup_phone"] === "string"
+      ? authUser.user_metadata["signup_phone"]
+      : "";
+  const phone = signupPhone || authUser?.phone || "";
+  const activePhone = phone || phoneNumber;
   const emailVerified = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at);
   const phoneVerified = Boolean(authUser?.phone_confirmed_at && authUser.phone);
 
@@ -1130,23 +1137,56 @@ export function VerifyView() {
   }, [emailVerified, phoneVerified, navigate]);
 
   useEffect(() => {
-    if (authLoading || !authUser || !emailVerified || phoneVerified || requested.current) return;
+    if (
+      authLoading ||
+      !authUser ||
+      !emailVerified ||
+      phoneVerified ||
+      !phone ||
+      requested.current
+    ) return;
     requested.current = true;
     setSending(true);
-    void actions.sendPhoneVerification().then(() => {
+    void actions.sendPhoneVerification(phone).then(() => {
+      setPhoneSubmitted(true);
       setNotice(`A verification code was sent to ${phone}.`);
     }).catch((reason: unknown) => {
       setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
     }).finally(() => setSending(false));
   }, [actions, authLoading, authUser, emailVerified, phoneVerified, phone]);
 
+  async function submitPhone(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    const fullInternationalPhoneNumber = phoneNumber.trim().replace(/[\s().-]/g, "");
+    if (!/^\+[1-9]\d{7,14}$/.test(fullInternationalPhoneNumber)) {
+      setError(
+        "Enter a valid phone number in international format, including its country code (for example, +14155550123).",
+      );
+      return;
+    }
+    requested.current = true;
+    setSending(true);
+    try {
+      await actions.sendPhoneVerification(fullInternationalPhoneNumber);
+      setPhoneNumber(fullInternationalPhoneNumber);
+      setPhoneSubmitted(true);
+      setNotice(`A verification code was sent to ${fullInternationalPhoneNumber}.`);
+    } catch (reason) {
+      setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
+    } finally {
+      setSending(false);
+    }
+  }
+
   async function resend() {
     setError("");
     setNotice("");
     setSending(true);
     try {
-      await actions.sendPhoneVerification();
-      setNotice(`A verification code was sent to ${phone}.`);
+      await actions.sendPhoneVerification(activePhone);
+      setNotice(`A verification code was sent to ${activePhone}.`);
     } catch (reason) {
       setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
     } finally {
@@ -1159,7 +1199,7 @@ export function VerifyView() {
     setError("");
     setVerifying(true);
     try {
-      await actions.verifyPhone(phoneCode.trim());
+      await actions.verifyPhone(phoneCode.trim(), activePhone);
       await navigate({ to: "/profile", replace: true });
     } catch (reason) {
       setError(phoneVerificationError(reason, "Phone verification failed."));
@@ -1194,11 +1234,44 @@ export function VerifyView() {
       </AuthLayout>
     );
   }
-  if (!phone) {
-    return <AuthLayout title="Phone verification required" subtitle="No phone number was attached to this signup."><AuthNotice error>Sign up again with a phone number in international format.</AuthNotice></AuthLayout>;
+  if (!phone && !phoneSubmitted) {
+    return (
+      <AuthLayout
+        title="Phone verification required"
+        subtitle="Enter your phone number in international format to receive a verification code."
+        backTo="/login"
+      >
+        <form className="space-y-4" onSubmit={(event) => void submitPhone(event)}>
+          <AuthNotice>
+            <ShieldCheck className="mr-1 inline size-3.5" />
+            Email verified. Add a phone number to complete your account.
+          </AuthNotice>
+          <label className="nexus-form-label">
+            Phone number
+            <input
+              className="nexus-input"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={phoneNumber}
+              onChange={(event) => {
+                setPhoneNumber(event.target.value);
+                setError("");
+              }}
+              placeholder="+14155550123"
+              required
+            />
+          </label>
+          {error && <AuthNotice error>{error}</AuthNotice>}
+          <button type="submit" className="nexus-primary-button w-full" disabled={sending}>
+            {sending ? <LoaderCircle className="size-4 animate-spin" /> : null} Send verification code
+          </button>
+        </form>
+      </AuthLayout>
+    );
   }
   return (
-    <AuthLayout title="Verify your phone" subtitle={`Enter the code sent to ${phone}.`} backTo="/login">
+    <AuthLayout title="Verify your phone" subtitle={`Enter the code sent to ${activePhone}.`} backTo="/login">
       <form className="space-y-4" onSubmit={(event) => void verify(event)}>
         <AuthNotice><ShieldCheck className="mr-1 inline size-3.5" />Email verified. Complete phone verification to continue.</AuthNotice>
         {notice && <AuthNotice>{notice}</AuthNotice>}

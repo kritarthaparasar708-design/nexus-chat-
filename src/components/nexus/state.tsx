@@ -53,8 +53,8 @@ type NexusActions = {
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
-  sendPhoneVerification: () => Promise<void>;
-  verifyPhone: (token: string) => Promise<void>;
+  sendPhoneVerification: (phone?: string) => Promise<void>;
+  verifyPhone: (token: string, phone?: string) => Promise<void>;
   setSettings: (patch: Partial<Settings>) => void;
   addRecentSearch: (query: string) => void;
   removeRecentSearch: (query: string) => void;
@@ -336,18 +336,24 @@ export function NexusProvider({ children }: { children: ReactNode }) {
     setPasswordRecovery(false);
   }, []);
 
-  const sendPhoneVerification = useCallback(async () => {
+  const sendPhoneVerification = useCallback(async (phone?: string) => {
     if (!authUser) throw new Error("Sign in and verify your email before verifying your phone.");
-    const rawPhone: unknown = authUser.user_metadata["signup_phone"];
+    const metadataPhone: unknown = authUser.user_metadata["signup_phone"];
+    const rawPhone =
+      phone?.trim() ||
+      (typeof metadataPhone === "string" ? metadataPhone : authUser.phone);
     if (typeof rawPhone !== "string" || !rawPhone) throw new Error("No signup phone number was found.");
     if (authUser.phone === rawPhone && authUser.phone_confirmed_at) return;
     const { error } = await requireSupabase().auth.updateUser({ phone: rawPhone });
     if (error) throw error;
   }, [authUser]);
 
-  const verifyPhone = useCallback(async (token: string) => {
+  const verifyPhone = useCallback(async (token: string, phone?: string) => {
     if (!authUser) throw new Error("Your verification session has expired. Sign in again.");
-    const rawPhone: unknown = authUser.user_metadata["signup_phone"];
+    const metadataPhone: unknown = authUser.user_metadata["signup_phone"];
+    const rawPhone =
+      phone?.trim() ||
+      (typeof metadataPhone === "string" ? metadataPhone : authUser.phone);
     if (typeof rawPhone !== "string" || !rawPhone) throw new Error("No signup phone number was found.");
     const { data, error } = await requireSupabase().auth.verifyOtp({ phone: rawPhone, token, type: "phone_change" });
     if (error) throw error;

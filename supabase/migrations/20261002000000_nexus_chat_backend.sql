@@ -116,7 +116,7 @@ $$;
 revoke all on function public.is_conversation_member(uuid) from anon, authenticated, public;
 grant execute on function public.is_conversation_member(uuid) to authenticated;
 
--- Registration requires both Supabase email confirmation and phone OTP confirmation.
+-- Registration requires Supabase email confirmation. Phone is optional.
 -- This SECURITY DEFINER helper exposes only a boolean, never auth.users fields.
 create or replace function public.is_nexus_user_verified()
 returns boolean
@@ -130,7 +130,6 @@ as $$
       from auth.users as u
      where u.id = (select auth.uid())
        and u.email_confirmed_at is not null
-       and u.phone_confirmed_at is not null
   );
 $$;
 revoke all on function public.is_nexus_user_verified() from anon, authenticated, public;
@@ -153,7 +152,7 @@ begin
     raise exception 'Authentication required';
   end if;
   if not public.is_nexus_user_verified() then
-    raise exception 'Verify your email and phone before starting a conversation';
+    raise exception 'Verify your email before starting a conversation';
   end if;
   if target_user_id is null or target_user_id = requester_id then
     raise exception 'Choose another registered user';

@@ -48,13 +48,11 @@ type NexusActions = {
   uploadAvatar: (file: File) => Promise<string>;
   searchUsers: (query: string) => Promise<User[]>;
   getProfile: (userId: string) => Promise<User | null>;
-  signUp: (email: string, phone: string, password: string) => Promise<void>;
+  signUp: (email: string, phone: string | undefined, password: string) => Promise<void>;
   signIn: (identifier: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
-  sendPhoneVerification: (phone?: string) => Promise<void>;
-  verifyPhone: (token: string, phone?: string) => Promise<void>;
   setSettings: (patch: Partial<Settings>) => void;
   addRecentSearch: (query: string) => void;
   removeRecentSearch: (query: string) => void;
@@ -265,7 +263,7 @@ export function NexusProvider({ children }: { children: ReactNode }) {
   }, [state.settings.theme]);
 
   const signUp = useCallback(
-    async (email: string, phone: string, password: string) => {
+    async (email: string, phone: string | undefined, password: string) => {
       setAuthError(null);
       setSignupNeedsEmailConfirmation(false);
       const origin = typeof window === "undefined" ? "" : window.location.origin;
@@ -274,7 +272,7 @@ export function NexusProvider({ children }: { children: ReactNode }) {
         password,
         options: {
           emailRedirectTo: `${origin}/verify`,
-          data: { signup_phone: phone },
+          data: phone ? { signup_phone: phone } : {},
         },
       });
       if (error) {
@@ -302,11 +300,7 @@ export function NexusProvider({ children }: { children: ReactNode }) {
     setAuthError(null);
     const client = requireSupabase();
     const value = identifier.trim();
-    const isPhone = /^\+?[\d\s().-]+$/.test(value) && /\d{7,}/.test(value);
-    const credentials = isPhone
-      ? { phone: value.replace(/[\s().-]/g, ""), password }
-      : { email: value, password };
-    const { data, error } = await client.auth.signInWithPassword(credentials);
+    const { data, error } = await client.auth.signInWithPassword({ email: value, password });
     if (error) {
       setAuthError(error.message);
       throw error;
@@ -335,31 +329,6 @@ export function NexusProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
     setPasswordRecovery(false);
   }, []);
-
-  const sendPhoneVerification = useCallback(async (phone?: string) => {
-    if (!authUser) throw new Error("Sign in and verify your email before verifying your phone.");
-    const metadataPhone: unknown = authUser.user_metadata["signup_phone"];
-    const rawPhone =
-      phone?.trim() ||
-      (typeof metadataPhone === "string" ? metadataPhone : authUser.phone);
-    if (typeof rawPhone !== "string" || !rawPhone) throw new Error("No signup phone number was found.");
-    if (authUser.phone === rawPhone && authUser.phone_confirmed_at) return;
-    const { error } = await requireSupabase().auth.updateUser({ phone: rawPhone });
-    if (error) throw error;
-  }, [authUser]);
-
-  const verifyPhone = useCallback(async (token: string, phone?: string) => {
-    if (!authUser) throw new Error("Your verification session has expired. Sign in again.");
-    const metadataPhone: unknown = authUser.user_metadata["signup_phone"];
-    const rawPhone =
-      phone?.trim() ||
-      (typeof metadataPhone === "string" ? metadataPhone : authUser.phone);
-    if (typeof rawPhone !== "string" || !rawPhone) throw new Error("No signup phone number was found.");
-    const { data, error } = await requireSupabase().auth.verifyOtp({ phone: rawPhone, token, type: "phone_change" });
-    if (error) throw error;
-    if (!data.user?.phone_confirmed_at) throw new Error("Supabase did not confirm this phone number.");
-    await applySession(data.session);
-  }, [applySession, authUser]);
 
   const saveProfile = useCallback(async (input: ProfileInput): Promise<Profile> => {
     if (!authUser) throw new Error("Sign in before completing your profile.");
@@ -560,8 +529,6 @@ export function NexusProvider({ children }: { children: ReactNode }) {
     signOut,
     requestPasswordReset,
     updatePassword,
-    sendPhoneVerification,
-    verifyPhone,
     setSettings,
     addRecentSearch,
     removeRecentSearch,
@@ -570,7 +537,7 @@ export function NexusProvider({ children }: { children: ReactNode }) {
   }), [
     openConversation, closeConversation, sendMessage, createConversation, updateProfile, saveProfile, uploadAvatar,
     searchUsers, getProfile, signUp, signIn, signOut, requestPasswordReset, updatePassword,
-    sendPhoneVerification, verifyPhone, setSettings, addRecentSearch, removeRecentSearch,
+    setSettings, addRecentSearch, removeRecentSearch,
     markNotificationRead, markAllNotificationsRead,
   ]);
 

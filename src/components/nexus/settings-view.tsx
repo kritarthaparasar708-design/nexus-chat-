@@ -7,7 +7,7 @@ export function SettingsView() {
   const { state, authUser, actions } = useNexus();
   const metadataPhone = typeof authUser?.user_metadata["signup_phone"] === "string" ? authUser.user_metadata["signup_phone"] : "";
   const phone = authUser?.phone || metadataPhone;
-  const emailVerified = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at);
+  const emailVerified = Boolean(authUser?.email_confirmed_at);
   const phoneVerified = Boolean(authUser?.phone_confirmed_at && authUser.phone);
 
   return (
@@ -27,7 +27,7 @@ export function SettingsView() {
             <div className="flex items-center justify-between gap-3"><dt className="text-muted-foreground">Email</dt><dd className="truncate text-right text-foreground">{authUser?.email || "Not available"}</dd></div>
             <div className="flex items-center justify-between gap-3"><dt className="text-muted-foreground">Email verification</dt><dd className={emailVerified ? "text-emerald-300" : "text-amber-300"}>{emailVerified ? "Verified" : "Pending"}</dd></div>
             <div className="flex items-center justify-between gap-3"><dt className="text-muted-foreground">Phone</dt><dd className="truncate text-right text-foreground">{phone || "Not provided"}</dd></div>
-            <div className="flex items-center justify-between gap-3"><dt className="text-muted-foreground">Phone verification</dt><dd className={phoneVerified ? "text-emerald-300" : "text-amber-300"}>{phoneVerified ? "Verified" : "Pending"}</dd></div>
+            <div className="flex items-center justify-between gap-3"><dt className="text-muted-foreground">Phone verification</dt><dd className={phoneVerified ? "text-emerald-300" : "text-muted-foreground"}>{phoneVerified ? "Verified" : "Optional"}</dd></div>
           </dl></div>
           <p className="mt-4 rounded-xl border border-border bg-secondary/40 px-3 py-2 text-[11px] leading-5 text-muted-foreground">These details are visible only to you in settings. Public search shows your name, username, bio, and optional profile picture.</p>
         </section>

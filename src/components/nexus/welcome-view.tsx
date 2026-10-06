@@ -8,7 +8,7 @@ const features = [
   { icon: LockKeyhole, title: "Private by default", text: "One-to-one conversations protected by database access rules." },
   { icon: Zap, title: "Live conversations", text: "New messages arrive in real time without refreshing." },
   { icon: UserRound, title: "Find your people", text: "Search public names and usernames, never private contact details." },
-  { icon: ShieldCheck, title: "Verified accounts", text: "Email and phone verification use your Supabase settings." },
+  { icon: ShieldCheck, title: "Verified accounts", text: "Email confirmation keeps your account secure." },
 ];
 
 export function WelcomeView() {

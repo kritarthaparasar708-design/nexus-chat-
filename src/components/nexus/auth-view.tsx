@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -92,30 +92,6 @@ function PasswordField({ label = "Password", value, onChange, autoComplete }: {
 
 function AuthNotice({ children, error = false }: { children: React.ReactNode; error?: boolean }) {
   return <p role={error ? "alert" : "status"} className={`rounded-xl border px-3 py-2 text-xs leading-5 ${error ? "border-destructive/30 bg-destructive/8 text-destructive" : "border-primary/20 bg-primary/8 text-muted-foreground"}`}>{children}</p>;
-}
-
-function phoneVerificationError(reason: unknown, fallback: string): string {
-  const message = reason instanceof Error ? reason.message.toLowerCase() : "";
-  const isDuplicatePhone =
-    message.includes("phone") &&
-    ["already", "registered", "exists", "taken"].some((part) => message.includes(part));
-  if (isDuplicatePhone) {
-    return "Phone number already registered. Log in or use a different number.";
-  }
-  if (
-    (message.includes("phone") || message.includes("sms")) &&
-    ["not configured", "not enabled", "disabled", "provider"].some((part) => message.includes(part))
-  ) {
-    return "Phone verification is not configured. Ask the administrator to enable Supabase phone authentication and SMS delivery.";
-  }
-  if (
-    message.includes("failed to fetch") ||
-    message.includes("network") ||
-    message.includes("fetch")
-  ) {
-    return "Unable to connect to the authentication service. Check your connection and try again.";
-  }
-  return reason instanceof Error && reason.message ? reason.message : fallback;
 }
 
 function signupErrorMessage(reason: unknown): string {
@@ -230,13 +206,9 @@ export function LoginView() {
     event.preventDefault();
     setError("");
     const cleanIdentifier = identifier.trim();
-    const compactPhone = cleanIdentifier.replace(/[\s().-]/g, "");
-    const isPhone = /^\+[1-9]\d{7,14}$/.test(compactPhone);
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanIdentifier);
-    if (!isEmail && !isPhone) {
-      setError(
-        "Enter a valid email address or phone number with its country code (for example, +14155550123).",
-      );
+    if (!isEmail) {
+      setError("Enter a valid email address.");
       return;
     }
     if (password.length === 0) {
@@ -257,15 +229,13 @@ export function LoginView() {
       const message = reason instanceof Error ? reason.message.toLowerCase() : "";
       if (message.includes("email not confirmed")) {
         setError("Please verify your email before logging in.");
-      } else if (message.includes("phone not confirmed")) {
-        setError("Please verify your phone number before logging in.");
       } else if (
         message.includes("invalid login credentials") ||
         message.includes("invalid credentials") ||
         message.includes("user not found")
       ) {
         setError(
-          "Your email or phone number and password don't match. Check your details or create an account.",
+          "Your email and password don't match. Check your details or create an account.",
         );
       } else if (
         message.includes("failed to fetch") ||
@@ -344,7 +314,7 @@ export function LoginView() {
             </p>
 
             <div className="nexus-divider nexus-login-divider">
-              <span>OR CONTINUE WITH EMAIL OR PHONE</span>
+              <span>OR CONTINUE WITH EMAIL</span>
             </div>
 
             <form
@@ -354,20 +324,20 @@ export function LoginView() {
               noValidate
             >
               <div className="nexus-login-field">
-                <label htmlFor="nexus-login-identifier">Email or Phone number</label>
+                <label htmlFor="nexus-login-identifier">Email address</label>
                 <span className="nexus-login-input-wrap">
                   <Mail className="nexus-login-input-icon" aria-hidden="true" />
                   <input
                     id="nexus-login-identifier"
                     className="nexus-login-input"
-                    type="text"
-                    inputMode="text"
+                    type="email"
+                    inputMode="email"
                     autoComplete="username"
                     autoCapitalize="none"
                     spellCheck={false}
                     value={identifier}
                     onChange={(event) => setIdentifier(event.target.value)}
-                    placeholder="Enter your email or phone number"
+                    placeholder="Enter your email address"
                     aria-describedby={error ? "nexus-login-error" : undefined}
                     required
                   />
@@ -609,28 +579,31 @@ export function SignupView() {
     setErrorField(null);
     const cleanEmail = email.trim().toLowerCase();
     const compactPhone = phone.trim().replace(/[\s().-]/g, "");
-    const hasInternationalPrefix = compactPhone.startsWith("+") || compactPhone.startsWith("00");
-    let nationalDigits = compactPhone.replace(/\D/g, "");
-    const callingCodeDigits = selectedCountry.dialCode.slice(1);
-    if (hasInternationalPrefix) {
-      nationalDigits = nationalDigits.replace(/^00/, "");
-      if (!nationalDigits.startsWith(callingCodeDigits)) {
-        setError("Invalid phone number. Choose the matching country code and try again.");
+    let cleanPhone: string | undefined;
+    if (compactPhone) {
+      const hasInternationalPrefix = compactPhone.startsWith("+") || compactPhone.startsWith("00");
+      let nationalDigits = compactPhone.replace(/\D/g, "");
+      const callingCodeDigits = selectedCountry.dialCode.slice(1);
+      if (hasInternationalPrefix) {
+        nationalDigits = nationalDigits.replace(/^00/, "");
+        if (!nationalDigits.startsWith(callingCodeDigits)) {
+          setError("Invalid phone number. Choose the matching country code and try again.");
+          setErrorField("phone");
+          return;
+        }
+        nationalDigits = nationalDigits.slice(callingCodeDigits.length);
+      }
+      nationalDigits = nationalDigits.replace(/^0+/, "");
+      cleanPhone = `${selectedCountry.dialCode}${nationalDigits}`;
+      if (/[^\d+]/.test(compactPhone) || !/^\+[1-9]\d{7,14}$/.test(cleanPhone)) {
+        setError("Invalid phone number. Check the number and country calling code.");
         setErrorField("phone");
         return;
       }
-      nationalDigits = nationalDigits.slice(callingCodeDigits.length);
     }
-    nationalDigits = nationalDigits.replace(/^0+/, "");
-    const cleanPhone = `${selectedCountry.dialCode}${nationalDigits}`;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setError("Invalid email address.");
       setErrorField("email");
-      return;
-    }
-    if (/[^\d+]/.test(compactPhone) || !/^\+[1-9]\d{7,14}$/.test(cleanPhone)) {
-      setError("Invalid phone number. Check the number and country calling code.");
-      setErrorField("phone");
       return;
     }
     if (password.length < 8) {
@@ -793,7 +766,7 @@ export function SignupView() {
               </div>
 
               <div className="nexus-login-field">
-                <label htmlFor="nexus-signup-phone">Phone number</label>
+                <label htmlFor="nexus-signup-phone">Phone number (optional)</label>
                 <div className="nexus-signup-phone-control">
                   <span className="nexus-signup-country-select-wrap">
                     <span className="nexus-signup-country-display" aria-hidden="true">
@@ -836,12 +809,11 @@ export function SignupView() {
                       placeholder="Enter your phone number"
                       aria-invalid={errorField === "phone"}
                       aria-describedby={`nexus-signup-phone-help${errorField === "phone" ? " nexus-signup-error" : ""}`}
-                      required
                     />
                   </span>
                 </div>
                 <span id="nexus-signup-phone-help" className="nexus-signup-field-help">
-                  Include your country code. This number is private.
+                  Optional. Include your country code if provided. This number is private.
                 </span>
                 {errorField === "phone" && (
                   <p id="nexus-signup-error" className="nexus-login-error" role="alert">
@@ -1107,104 +1079,37 @@ export function ResetPasswordView() {
 }
 
 export function VerifyView() {
-  const {
-    actions,
-    authUser,
-    authLoading,
-    authConfigured,
-    signupNeedsEmailConfirmation,
-  } = useNexus();
+  const { authUser, authLoading, authConfigured, signupNeedsEmailConfirmation } = useNexus();
   const navigate = useNavigate();
-  const [phoneCode, setPhoneCode] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [phoneSubmitted, setPhoneSubmitted] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const requested = useRef(false);
-  const signupPhone =
-    typeof authUser?.user_metadata["signup_phone"] === "string"
-      ? authUser.user_metadata["signup_phone"]
-      : "";
-  const phone = signupPhone || authUser?.phone || "";
-  const activePhone = phone || phoneNumber;
-  const emailVerified = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at);
-  const phoneVerified = Boolean(authUser?.phone_confirmed_at && authUser.phone);
+  const emailVerified = Boolean(authUser?.email_confirmed_at);
 
   useEffect(() => {
-    if (emailVerified && phoneVerified) void navigate({ to: "/profile", replace: true });
-  }, [emailVerified, phoneVerified, navigate]);
+    if (emailVerified) void navigate({ to: "/profile", replace: true });
+  }, [emailVerified, navigate]);
 
-  useEffect(() => {
-    if (
-      authLoading ||
-      !authUser ||
-      !emailVerified ||
-      phoneVerified ||
-      !phone ||
-      requested.current
-    ) return;
-    requested.current = true;
-    setSending(true);
-    void actions.sendPhoneVerification(phone).then(() => {
-      setPhoneSubmitted(true);
-      setNotice(`A verification code was sent to ${phone}.`);
-    }).catch((reason: unknown) => {
-      setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
-    }).finally(() => setSending(false));
-  }, [actions, authLoading, authUser, emailVerified, phoneVerified, phone]);
-
-  async function submitPhone(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setNotice("");
-    const fullInternationalPhoneNumber = phoneNumber.trim().replace(/[\s().-]/g, "");
-    if (!/^\+[1-9]\d{7,14}$/.test(fullInternationalPhoneNumber)) {
-      setError(
-        "Enter a valid phone number in international format, including its country code (for example, +14155550123).",
-      );
+  async function resendEmailConfirmation() {
+    if (!supabase || !authUser?.email) {
+      setError("Unable to resend the confirmation email. Please try again later.");
       return;
     }
-    requested.current = true;
-    setSending(true);
-    try {
-      await actions.sendPhoneVerification(fullInternationalPhoneNumber);
-      setPhoneNumber(fullInternationalPhoneNumber);
-      setPhoneSubmitted(true);
-      setNotice(`A verification code was sent to ${fullInternationalPhoneNumber}.`);
-    } catch (reason) {
-      setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
-    } finally {
-      setSending(false);
-    }
-  }
-
-  async function resend() {
     setError("");
     setNotice("");
     setSending(true);
     try {
-      await actions.sendPhoneVerification(activePhone);
-      setNotice(`A verification code was sent to ${activePhone}.`);
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: authUser.email,
+        options: { emailRedirectTo: `${window.location.origin}/verify` },
+      });
+      if (resendError) throw resendError;
+      setNotice(`A confirmation email was sent to ${authUser.email}.`);
     } catch (reason) {
-      setError(phoneVerificationError(reason, "Unable to send a phone verification code."));
+      setError(reason instanceof Error ? reason.message : "Unable to resend the confirmation email.");
     } finally {
       setSending(false);
-    }
-  }
-
-  async function verify(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setVerifying(true);
-    try {
-      await actions.verifyPhone(phoneCode.trim(), activePhone);
-      await navigate({ to: "/profile", replace: true });
-    } catch (reason) {
-      setError(phoneVerificationError(reason, "Phone verification failed."));
-    } finally {
-      setVerifying(false);
     }
   }
 
@@ -1212,74 +1117,35 @@ export function VerifyView() {
     return <AuthLayout title="Verify your account" subtitle="Supabase must be configured before account verification can continue."><AuthNotice error>Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then reload this page.</AuthNotice></AuthLayout>;
   }
   if (authLoading) return <AuthLayout title="Checking verification" subtitle="Restoring your secure session."><p className="text-center text-sm text-muted-foreground">Loading…</p></AuthLayout>;
-  if (!authUser || !emailVerified) {
-    return (
-      <AuthLayout title="Verify your email" subtitle="Open the confirmation link sent by Supabase to activate your account." backTo="/signup">
-        <div className="space-y-4 text-center">
-          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Mail className="size-5" /></span>
-          {signupNeedsEmailConfirmation && !authUser ? (
-            <AuthNotice>
-              Account created. Check your email to verify your account. After confirming, return here
-              to verify your phone and complete your profile.
-            </AuthNotice>
-          ) : (
-            <p className="text-sm leading-6 text-muted-foreground">
-              Check your email for a confirmation link. After confirming it, this page will continue
-              to phone verification. If you already confirmed, open the link again to return here.
-            </p>
-          )}
-          {authUser?.email && <AuthNotice>A confirmation email was sent to {authUser.email}.</AuthNotice>}
-          <Link to="/login" className="nexus-secondary-button w-full justify-center">Return to log in</Link>
-        </div>
-      </AuthLayout>
-    );
-  }
-  if (!phone && !phoneSubmitted) {
-    return (
-      <AuthLayout
-        title="Phone verification required"
-        subtitle="Enter your phone number in international format to receive a verification code."
-        backTo="/login"
-      >
-        <form className="space-y-4" onSubmit={(event) => void submitPhone(event)}>
-          <AuthNotice>
-            <ShieldCheck className="mr-1 inline size-3.5" />
-            Email verified. Add a phone number to complete your account.
-          </AuthNotice>
-          <label className="nexus-form-label">
-            Phone number
-            <input
-              className="nexus-input"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              value={phoneNumber}
-              onChange={(event) => {
-                setPhoneNumber(event.target.value);
-                setError("");
-              }}
-              placeholder="+14155550123"
-              required
-            />
-          </label>
-          {error && <AuthNotice error>{error}</AuthNotice>}
-          <button type="submit" className="nexus-primary-button w-full" disabled={sending}>
-            {sending ? <LoaderCircle className="size-4 animate-spin" /> : null} Send verification code
-          </button>
-        </form>
-      </AuthLayout>
-    );
-  }
   return (
-    <AuthLayout title="Verify your phone" subtitle={`Enter the code sent to ${activePhone}.`} backTo="/login">
-      <form className="space-y-4" onSubmit={(event) => void verify(event)}>
-        <AuthNotice><ShieldCheck className="mr-1 inline size-3.5" />Email verified. Complete phone verification to continue.</AuthNotice>
+    <AuthLayout title="Verify your email" subtitle="Open the confirmation link sent by Supabase to activate your account." backTo="/signup">
+      <div className="space-y-4 text-center">
+        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Mail className="size-5" /></span>
+        {signupNeedsEmailConfirmation && !authUser ? (
+          <AuthNotice>
+            Account created. Check your email to verify your account. After confirming, return here
+            to continue to your profile.
+          </AuthNotice>
+        ) : authUser?.email ? (
+          <AuthNotice>
+            Confirm the email address {authUser.email} to continue. After verification, Nexus Chat
+            will open automatically.
+          </AuthNotice>
+        ) : (
+          <p className="text-sm leading-6 text-muted-foreground">
+            Check your email for a confirmation link. After confirming it, return here to continue.
+          </p>
+        )}
         {notice && <AuthNotice>{notice}</AuthNotice>}
-        <label className="nexus-form-label">6-digit code<input className="nexus-input text-center text-lg tracking-[0.4em]" inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="[0-9]{6}" value={phoneCode} onChange={(event) => setPhoneCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required /></label>
         {error && <AuthNotice error>{error}</AuthNotice>}
-        <button type="submit" className="nexus-primary-button w-full" disabled={verifying || phoneCode.length !== 6}>{verifying ? <LoaderCircle className="size-4 animate-spin" /> : null} Verify phone</button>
-        <button type="button" className="nexus-text-button w-full justify-center" onClick={() => void resend()} disabled={sending}>{sending ? "Sending code…" : "Resend code"}</button>
-      </form>
+        {authUser?.email && (
+          <button type="button" className="nexus-text-button w-full justify-center" onClick={() => void resendEmailConfirmation()} disabled={sending}>
+            {sending ? <LoaderCircle className="size-4 animate-spin" /> : null}
+            {sending ? "Sending confirmation email…" : "Resend confirmation email"}
+          </button>
+        )}
+        <Link to="/login" className="nexus-secondary-button w-full justify-center">Return to log in</Link>
+      </div>
     </AuthLayout>
   );
 }

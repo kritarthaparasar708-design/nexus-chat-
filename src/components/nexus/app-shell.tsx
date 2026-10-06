@@ -75,23 +75,21 @@ export function AppShell({ children, title, subtitle }: { children: ReactNode; t
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [logoutError, setLogoutError] = useState("");
   const currentPath = location.pathname;
-  const emailVerified = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at);
-  const phoneVerified = Boolean(authUser?.phone && authUser.phone_confirmed_at);
-  const accountVerified = emailVerified && phoneVerified;
+  const emailVerified = Boolean(authUser?.email_confirmed_at);
 
   useEffect(() => {
     if (!authLoading && authConfigured && !authUser) void navigate({ to: "/login", replace: true });
   }, [authLoading, authConfigured, authUser, navigate]);
   useEffect(() => {
-    if (!authLoading && authUser && !accountVerified && currentPath !== "/verify") {
+    if (!authLoading && authUser && !emailVerified && currentPath !== "/verify") {
       void navigate({ to: "/verify", replace: true });
     }
-  }, [authLoading, authUser, accountVerified, currentPath, navigate]);
+  }, [authLoading, authUser, emailVerified, currentPath, navigate]);
   useEffect(() => {
-    if (!authLoading && authUser && accountVerified && !profileLoading && !profile && currentPath !== "/profile") {
+    if (!authLoading && authUser && emailVerified && !profileLoading && !profile && currentPath !== "/profile") {
       void navigate({ to: "/profile", replace: true });
     }
-  }, [authLoading, authUser, accountVerified, profileLoading, profile, currentPath, navigate]);
+  }, [authLoading, authUser, emailVerified, profileLoading, profile, currentPath, navigate]);
 
   if (!authConfigured) {
     return (
@@ -102,7 +100,7 @@ export function AppShell({ children, title, subtitle }: { children: ReactNode; t
   }
   if (authLoading || (authUser && profileLoading)) return <AppLoading message="Restoring your Nexus Chat session…" />;
   if (!authUser) return <AppLoading message="Redirecting to sign in…" />;
-  if (!accountVerified) return <AppLoading message="Finish email and phone verification to continue…" />;
+  if (!emailVerified) return <AppLoading message="Verify your email to continue…" />;
   if (profileError) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-5">
